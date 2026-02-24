@@ -141,7 +141,7 @@ Para cada curso recomendado incluye:
             "popularidad": 0.15,   # Trending
             "novedad": 0.10        # Cursos nuevos
         },
-        "top_k": 5,  # Número de recomendaciones a generar
+        "top_k": 3,  # Número de recomendaciones a generar
         "min_score": 0.5,  # Puntuación mínima para recomendar
         "diversidad_threshold": 0.3  # Qué tan diversos deben ser los cursos
     },
@@ -217,7 +217,7 @@ Responde de manera clara, amigable y útil.
 PARAMETROS_GLOBALES = {
     "modelo_llm": "gpt-4o-mini",
     "modelo_embeddings": "text-embedding-3-large",
-    "limite_contexto": 5,  # Chunks a recuperar de Qdrant
+    "limite_contexto": 10,  # Chunks a recuperar de Qdrant
     "max_tokens_contexto": 4000,
     
     # Rate limiting
@@ -225,7 +225,7 @@ PARAMETROS_GLOBALES = {
     "max_consultas_por_hora": 20,
     
     # Cache
-    "cache_ttl_segundos": 3600,  # 1 hora
+    "cache_ttl_segundos": 3600, 
     
     # Logging
     "guardar_conversaciones": True,

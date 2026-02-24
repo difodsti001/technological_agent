@@ -117,7 +117,7 @@ class ConsultaRequest(BaseModel):
 class RecomendacionRequest(BaseModel):
     usuario:        str
     nombre_usuario: Optional[str] = None
-    top_k:          int = 5
+    top_k:          int = 3
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -252,23 +252,27 @@ def cargar_desde_postgres() -> pd.DataFrame:
 
 
 def cargar_desde_excel() -> pd.DataFrame:
-    path  = os.getenv("EXCEL_FALLBACK_PATH")
+    path_env = os.getenv("EXCEL_FALLBACK_PATH")
 
-    if not path:
+    if not path_env:
         raise EnvironmentError("EXCEL_FALLBACK_PATH no definida.")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, path_env)
+
+    logger.info(f"📂 Buscando Excel en: {path}")
 
     if not os.path.exists(path):
         raise FileNotFoundError(f"Excel no encontrado: {path}")
 
-    # Tipar correctamente: si viene como string "0" convertir a int
     sheet_raw = os.getenv("EXCEL_SHEET_NAME", "0")
     try:
-        sheet = int(sheet_raw)    # "0", "1", "2" → primera hoja, segunda, etc.
+        sheet = int(sheet_raw)
     except ValueError:
-        sheet = sheet_raw         # "Hoja1", "Sheet1" → nombre de hoja
+        sheet = sheet_raw
 
     df = pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
     df.columns = [c.strip().upper() for c in df.columns]
+
     logger.info(f"✅ Excel → {len(df):,} registros desde {path} (hoja: {sheet})")
     return _seleccionar_columnas(df)
 
@@ -351,7 +355,7 @@ async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
 # 🔍 QDRANT
 # ══════════════════════════════════════════════════════════════════════
 
-def search_qdrant(query: str, collection_name: str = "Curso_0", k: int = 5) -> List[Dict]:
+def search_qdrant(query: str, collection_name: str = "Curso_0", k: int = 10) -> List[Dict]:
     try:
         emb    = embedding_model.encode(query).tolist()
         result = qdrant_client.query_points(
@@ -651,6 +655,7 @@ async def procesar_consulta(request: ConsultaRequest):
 
 @app.post("/api/recomendar")
 async def recomendar_cursos(request: RecomendacionRequest):
+    logger.info(f"📨 Request recibido → usuario: {request.usuario} | top_k: {request.top_k}")
     try:
         resultado = await procesar_recomendacion_cursos(request)
         guardar_conversacion_recomendacion(request, resultado)

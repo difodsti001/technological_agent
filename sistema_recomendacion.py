@@ -55,7 +55,7 @@ class RecommenderConfig:
     }
 
     TOP_K_SIMILAR_USERS   = 20
-    TOP_K_RECOMENDACIONES = 5
+    TOP_K_RECOMENDACIONES = 3
     MIN_SCORE             = 0.05
 
     # Límite de docentes para la matriz de similitud (protección RAM)
@@ -64,7 +64,7 @@ class RecommenderConfig:
     MAX_USUARIOS_MATRIZ   = 15_000
 
     # Justificaciones concurrentes (máx threads simultáneos al LLM)
-    MAX_LLM_WORKERS       = 5
+    MAX_LLM_WORKERS       = 3
 
     COLUMNAS_REQUERIDAS = {
         "USUARIO_DOCUMENTO", "ID_OFERTA_FORMATIVA", "CURSO",
@@ -515,7 +515,8 @@ class HybridRecommender:
         top_k: int = RecommenderConfig.TOP_K_RECOMENDACIONES,
         incluir_justificacion: bool = True
     ) -> List[Dict]:
-        logger.info(f"🎯 Recomendando para: {user_id}")
+        logger.info(f"Recomendando para: {user_id}")
+        logger.info(f"top_k recibido: {top_k} | config default: {RecommenderConfig.TOP_K_RECOMENDACIONES}")
 
         cursos_tomados = set(
             self.df_raw[self.df_raw["USUARIO_DOCUMENTO"] == user_id]
@@ -666,27 +667,90 @@ class HybridRecommender:
             )
 
         def _generar_una(rec: Dict) -> str:
-            cal     = rec.get("CALIFICACION_PROM", 0)
-            cal_txt = f"{cal:.1f}/5.0" if cal > 0 else "sin calificación registrada"
+            cal      = rec.get("CALIFICACION_PROM", 0)
+            tasa_cul = rec.get("TASA_CULMINACION", 0)
+            tasa_apr = rec.get("TASA_APROBACION", 0)
+            horas    = rec.get("HORAS_PROGRAMA", 0)
+            metodos  = rec.get("metodos_usados", [])
+            ranking  = rec.get("_ranking_pos", "")  # posición en el top (ver nota abajo)
 
-            prompt = (
-                f"Eres un asistente de recomendación de cursos para docentes del "
-                f"Ministerio de Educación del Perú (DIFODS-SIFODS).\n\n"
-                f"Perfil del docente: {perfil_txt}\n\n"
-                f"Curso recomendado:\n"
-                f"- Nombre: {rec.get('CURSO', '')}\n"
-                f"- Duración: {rec.get('HORAS_PROGRAMA', 0)} horas\n"
-                f"- Calificación del curso: {cal_txt}\n"
-                f"- Público objetivo: {rec.get('PUBLICO_OBJETIVO', 'Todos')}\n"
-                f"- Propósito: {rec.get('PROPOSITO', '')[:150]}\n"
-                f"- Tasa de culminación: {rec.get('TASA_CULMINACION', 0)*100:.0f}%\n"
-                f"- Seleccionado por: {', '.join(rec.get('metodos_usados', []))}\n\n"
-                f"Genera UNA sola oración (máximo 15 palabras) explicando POR QUÉ este "
-                f"curso es relevante para este docente. Sé específico y motivador. "
-                f"No empieces con 'Este curso'. Solo la oración, sin comillas."
+            # Traducir los métodos a lenguaje humano
+            metodo_textos = {
+                "colaborativo": f"docentes con perfil similar al tuyo lo completaron con éxito",
+                "historial":    f"docentes de tu nivel y región lo culminaron y valoraron positivamente",
+                "popularidad":  f"es uno de los cursos más completados y mejor calificados de la plataforma",
+                "novedad":      f"es parte de la oferta formativa más reciente de DIFODS",
+            }
+            razones = [metodo_textos[m] for m in metodos if m in metodo_textos]
+            razones_txt = "; ".join(razones) if razones else "es relevante para tu perfil docente"
+
+            # Datos del docente más ricos
+            if perfil_row.empty:
+                docente_contexto = "Docente de la plataforma SIFODS"
+                nivel = ""
+                dre   = ""
+            else:
+                p     = perfil_row.iloc[0]
+                nivel = str(p.get("NIVELNEXUS", "")).strip()
+                dre   = str(p.get("NOMBRE_DRE", "")).strip()
+                n_cul = int(p.get("CURSOS_CULMINADOS", 0))
+                n_tot = int(p.get("TOTAL_CURSOS", 0))
+                tasa_doc = float(p.get("TASA_COMPLETITUD", 0)) * 100
+                edad  = p.get("EDAD_APROX", None)
+
+                docente_contexto = (
+                    f"Nivel educativo: {nivel}. "
+                    f"DRE: {dre}. "
+                    f"Ha completado {n_cul} de {n_tot} cursos en SIFODS "
+                    f"(tasa de completitud personal: {tasa_doc:.0f}%). "
+                    + (f"Edad aproximada: {int(edad)} años. " if pd.notna(edad) else "")
+                )
+
+            cal_txt = f"{cal:.1f}/5.0" if cal > 0 else "sin calificación registrada aún"
+
+            system_prompt = (
+                f"Eres un orientador formativo del Ministerio de Educación del Perú, "
+                f"experto en desarrollo profesional docente. "
+                f"Tu tono es cercano, directo y motivador — como un colega que conoce "
+                f"la realidad del aula peruana y quiere ayudar al docente a crecer. "
+                f"Nunca suenas corporativo ni genérico. "
+                f"Siempre conectas los datos concretos del curso con la situación real "
+                f"del docente. Escribes en español peruano natural, sin tecnicismos."
+                f"\n\nEJEMPLO DE JUSTIFICACIÓN CORRECTA:\n"
+                f"Docentes con tu perfil en Lima lo seleccionaron como uno de sus"
+                f"cursos más útiles para el trabajo en aula. Con 20 horas y 91% de aprobación,"
+                f" es una de las formaciones más eficientes disponibles ahora mismo."
             )
+
+            user_prompt = (
+                f"PERFIL DEL DOCENTE:\n"
+                f"{docente_contexto}\n\n"
+                f"CURSO RECOMENDADO:\n"
+                f"- Nombre: {rec.get('CURSO', '')}\n"
+                f"- Duración: {horas} horas\n"
+                f"- Calificación promedio: {cal_txt}\n"
+                f"- Público objetivo: {rec.get('PUBLICO_OBJETIVO', 'Todos los niveles')}\n"
+                f"- Propósito del curso: {rec.get('PROPOSITO', '')[:250]}\n"
+                f"- Tasa de culminación: {tasa_cul*100:.0f}% de docentes lo completó\n"
+                f"- Tasa de aprobación: {tasa_apr*100:.0f}%\n\n"
+                f"POR QUÉ SE RECOMIENDA A ESTE DOCENTE:\n"
+                f"{razones_txt}.\n\n"
+                f"TAREA:\n"
+                f"Escribe 2 oraciones cortas (máximo 40 palabras en total) que expliquen "
+                f"de forma personalizada y motivadora por qué este curso es valioso "
+                f"para ESTE docente en particular. "
+                f"Usa datos concretos del curso (calificación, tasa de culminación, horas) "
+                f"y conecta con el perfil del docente (nivel, región). "
+                f"La primera oración explica el valor del curso. "
+                f"La segunda motiva a tomarlo con un dato concreto o beneficio específico. "
+                f"No empieces ninguna oración con 'Este curso'. "
+                f"No uses comillas. No uses listas. Solo el texto directo."
+            )
+
             return self._llamar_llm_justificacion(
-                prompt, rec.get("ID_OFERTA_FORMATIVA", "?")
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                curso_id=rec.get("ID_OFERTA_FORMATIVA", "?")
             )
 
         # Ejecutar en paralelo con ThreadPoolExecutor
@@ -702,16 +766,24 @@ class HybridRecommender:
 
         return recomendaciones
 
-    def _llamar_llm_justificacion(self, prompt: str, curso_id: str = "?") -> str:
-        """GPT primero, Gemini como fallback, texto genérico si ambos fallan."""
-        # Intento 1: OpenAI
+    def _llamar_llm_justificacion(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        curso_id: str = "?"
+    ) -> str:
+
+        # Intento 1: OpenAI — con roles separados (system + user)
         if self.openai_client:
             try:
                 resp = self.openai_client.chat.completions.create(
                     model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=60,
-                    temperature=0.7,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user",   "content": user_prompt},
+                    ],
+                    max_tokens=120,      
+                    temperature=0.75,    
                 )
                 return resp.choices[0].message.content.strip()
             except Exception as e:
@@ -722,14 +794,14 @@ class HybridRecommender:
             try:
                 resp = self.gemini_client.models.generate_content(
                     model="gemini-2.5-flash",
-                    contents=prompt,
-                    config={"temperature": 0.7, "max_output_tokens": 60}
+                    contents=f"{system_prompt}\n\n{user_prompt}",
+                    config={"temperature": 0.75, "max_output_tokens": 120}
                 )
                 return resp.text.strip()
             except Exception as e2:
                 logger.warning(f"⚠️  Gemini falló (curso {curso_id}): {e2}")
 
-        return "Curso relevante para tu nivel y región educativa."
+        return "Curso relevante para tu nivel educativo y región. Docentes con tu perfil lo completaron con alta valoración."
 
     # ══════════════════════════════════════════════════════════════════
     # 📊 UTILIDADES PÚBLICAS
@@ -763,11 +835,6 @@ class HybridRecommender:
 def crear_recomendador(df: pd.DataFrame) -> HybridRecommender:
     api_key = os.getenv("OPENAI_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY")
-
-    if not api_key and not gemini_key:
-        raise EnvironmentError(
-            "❌ No hay LLM disponible: define OPENAI_API_KEY o GEMINI_API_KEY."
-        )
 
     return HybridRecommender(
         df=df,
