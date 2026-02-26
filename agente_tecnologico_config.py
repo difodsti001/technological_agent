@@ -1,5 +1,5 @@
 """
-⚙️ CONFIGURACIÓN DEL AGENTE TECNOLÓGICO - DIFODS
+CONFIGURACIÓN DEL AGENTE TECNOLÓGICO - DIFODS
 ================================================
 
 Este agente tiene 2 tareas principales:
@@ -8,7 +8,7 @@ Este agente tiene 2 tareas principales:
 """
 
 # ==============================
-# 🎯 CONFIGURACIÓN DEL AGENTE
+# CONFIGURACIÓN DEL AGENTE
 # ==============================
 
 AGENTE_CONFIG = {
@@ -20,7 +20,7 @@ AGENTE_CONFIG = {
 }
 
 # ==============================
-# 📚 TAREA 1: PREGUNTAS SIFODS
+# PREGUNTAS SIFODS
 # ==============================
 
 TAREA_SIFODS = {
@@ -89,7 +89,7 @@ Ayudar a los docentes a navegar y usar la plataforma SIFODS de manera autónoma.
 }
 
 # ==============================
-# 🎯 TAREA 2: RECOMENDACIÓN DE CURSOS
+# TAREA 2: RECOMENDACIÓN DE CURSOS
 # ==============================
 
 TAREA_RECOMENDACION = {
@@ -154,7 +154,7 @@ Para cada curso recomendado incluye:
 }
 
 # ==============================
-# 🔄 CLASIFICADOR DE TAREAS
+# CLASIFICADOR DE TAREAS
 # ==============================
 
 CLASIFICADOR_CONFIG = {
@@ -195,7 +195,7 @@ Responde SOLO con JSON:
 }
 
 # ==============================
-# 🎨 PROMPT BASE GENERAL
+# PROMPT BASE GENERAL
 # ==============================
 
 PROMPT_BASE = """
@@ -211,7 +211,7 @@ Responde de manera clara, amigable y útil.
 """
 
 # ==============================
-# 📊 PARÁMETROS GLOBALES
+# PARÁMETROS GLOBALES
 # ==============================
 
 PARAMETROS_GLOBALES = {
@@ -233,7 +233,7 @@ PARAMETROS_GLOBALES = {
 }
 
 # ==============================
-# 🗂️ ESTRUCTURA DE RESPUESTA
+# ESTRUCTURA DE RESPUESTA
 # ==============================
 
 class RespuestaAgente:
@@ -248,7 +248,7 @@ class RespuestaAgente:
         self.metadata: dict = {}
 
 # ==============================
-# 🔑 MENSAJES DE AYUDA
+# MENSAJES DE AYUDA
 # ==============================
 
 MENSAJES_AYUDA = {
@@ -294,7 +294,7 @@ En este momento no tengo suficiente información para hacerte recomendaciones pe
 
 
 # ==============================
-# 📋 INFORMACIÓN DEL MÓDULO
+# INFORMACIÓN DEL MÓDULO
 # ==============================
 
 __version__ = "1.0.0"

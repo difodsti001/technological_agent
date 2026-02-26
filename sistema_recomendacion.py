@@ -1,8 +1,6 @@
 """
 🎯 SISTEMA DE RECOMENDACIÓN DE CURSOS - FILTRO COLABORATIVO HÍBRIDO
 ====================================================================
-DIFODS - Agente Tecnológico v2.2
-
 Tabla única en PostgreSQL (vista o tabla plana) con los campos reales:
 
     AÑO, TIPO_CONSTANCIA, CURSO, NOMBRE_DRE, NOMBRE_UGEL,
@@ -17,16 +15,6 @@ Componentes del modelo híbrido:
     2. Popularidad   (30%) → tasa_culminacion × calificacion_norm × log(inscritos)
     3. Historial     (20%) → co-ocurrencia con peso PUBLICO_OBJETIVO
     4. Novedad       (10%) → score por AÑO más reciente
-
-CORRECCIONES v2.2:
-    - RATING_COMPUESTO vectorizado con np.where (sin df.apply)
-    - Colaborativo con producto matricial numpy (O(U*C) en vez de O(C*V))
-    - Justificaciones concurrentes con ThreadPoolExecutor
-    - Similitud: sparse matrix + limitación a 10k docentes para RAM segura
-    - refrescar_datos() crea instancia nueva (no corrompe estado)
-    - _normalizar_binario maneja numpy.bool_ correctamente
-    - gemini_client sin acceso a atributo privado ._api_key
-    - CALIFICACIONES escala 0-5 documentada y guardada para refrescar
 """
 
 import os
@@ -145,7 +133,7 @@ class HybridRecommender:
         self.sim_matrix   = self._calcular_similitud_usuarios()
 
         logger.info(
-            f"✅ HybridRecommender v2.2 | "
+            f"✅ Sistema HybridRecommender| "
             f"Registros: {len(self.df_raw):,} | "
             f"Cursos activos: {(self.df_cursos['ACTIVO']==1).sum()} | "
             f"Docentes: {len(self.df_perfil):,}"
@@ -846,7 +834,7 @@ def crear_recomendador(df: pd.DataFrame) -> HybridRecommender:
 def obtener_recomendaciones(
     user_id: str,
     df: pd.DataFrame,
-    top_k: int = 5,
+    top_k: int = 3,
     incluir_justificacion: bool = True,
 ) -> List[Dict]:
     """Conveniencia: instancia y ejecuta en una sola llamada."""

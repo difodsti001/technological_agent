@@ -1,14 +1,10 @@
 """
-🤖 BACKEND DEL AGENTE TECNOLÓGICO - DIFODS
-==========================================
-v2.2 — Correcciones de escala y robustez
+AGENTE TECNOLÓGICO - DIFODS
 
 Correcciones respecto a v2.1:
     - Connection pooling (psycopg2.pool.ThreadedConnectionPool)
     - gemini_model inicializado condicionalmente (no falla si key es None)
     - refrescar_recomendador usa swap seguro (instancia nueva)
-    - EXCEL_SHEET_NAME tipado correctamente como int si es numérico
-    - _fuente_datos guardada en el recomendador para /health
 """
 
 import os
@@ -50,7 +46,7 @@ warnings.filterwarnings(
     message="pandas only supports SQLAlchemy connectable"
 )
 # ══════════════════════════════════════════════════════════════════════
-# ⚙️ CONFIGURACIÓN INICIAL
+# CONFIGURACIÓN INICIAL
 # ══════════════════════════════════════════════════════════════════════
 
 load_dotenv()
@@ -71,7 +67,6 @@ openai_client = OpenAI(api_key=_openai_key) if _openai_key else None
 if not openai_client:
     logger.warning("⚠️  OPENAI_API_KEY no definida → se usará solo Gemini")
 
-# Gemini: inicializar condicionalmente para no crashear si la key no está
 _gemini_key   = os.getenv("GEMINI_API_KEY")
 gemini_model  = genai.Client(api_key=_gemini_key) if _gemini_key else None
 if not gemini_model:
@@ -87,7 +82,6 @@ embedding_model = SentenceTransformer(
 tokenizer = tiktoken.encoding_for_model("gpt-4o-mini")
 LIMA_TZ   = ZoneInfo("America/Lima")
 
-# Recomendador global (instanciado en startup)
 recomendador: Optional[HybridRecommender] = None
 
 # ──────────────────────────────────────────────────────────────────────
@@ -98,13 +92,13 @@ COLUMNAS_RECOMENDACION = [
     "USUARIO_DOCUMENTO", "NOMBRE_COMPLETO", "NIVELNEXUS",
     "APROBACION", "ID_OFERTA_FORMATIVA", "ID_GRUPO",
     "FECHA_NACIMIENTO", "ES_FOCALIZADO", "HORAS_PROGRAMA",
-    "CALIFICACIONES",       # rating del curso (0-5)
+    "CALIFICACIONES",
     "PROPOSITO", "ACTIVO", "PUBLICO_OBJETIVO", "CURSO_CULMINADO", "EDAD",
 ]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 📊 MODELOS DE DATOS (Pydantic)
+# MODELOS DE DATOS (Pydantic)
 # ══════════════════════════════════════════════════════════════════════
 
 class ConsultaRequest(BaseModel):
@@ -121,7 +115,7 @@ class RecomendacionRequest(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 💾 CONNECTION POOL (reemplaza conexión-por-request)
+# CONNECTION POOL (reemplaza conexión-por-request)
 # ══════════════════════════════════════════════════════════════════════
 
 _db_pool: Optional[pg_pool.ThreadedConnectionPool] = None
@@ -160,7 +154,6 @@ def get_db_connection():
     """
     if _db_pool:
         return _db_pool.getconn()
-    # Fallback a conexión directa si el pool no está disponible
     return psycopg2.connect(**_get_pool_kwargs())
 
 
@@ -219,7 +212,7 @@ def crear_tablas():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 📥 CARGA DE DATOS PARA EL RECOMENDADOR
+# CARGA DE DATOS PARA EL RECOMENDADOR
 # ══════════════════════════════════════════════════════════════════════
 
 def _seleccionar_columnas(df: pd.DataFrame) -> pd.DataFrame:
@@ -305,7 +298,7 @@ def inicializar_recomendador() -> Optional[HybridRecommender]:
     try:
         df, fuente = cargar_dataframe_recomendacion()
         rec = crear_recomendador(df)
-        rec._fuente_datos = fuente   # guardar para /health
+        rec._fuente_datos = fuente 
         return rec
     except Exception as e:
         logger.warning(
@@ -316,7 +309,7 @@ def inicializar_recomendador() -> Optional[HybridRecommender]:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🤖 LLM CON FALLBACK (GPT → Gemini) — para consultas SIFODS
+# LLM CON FALLBACK (GPT → Gemini) — para consultas SIFODS
 # ══════════════════════════════════════════════════════════════════════
 
 async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
@@ -352,7 +345,7 @@ async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🔍 QDRANT
+# QDRANT
 # ══════════════════════════════════════════════════════════════════════
 
 def search_qdrant(query: str, collection_name: str = "Curso_0", k: int = 10) -> List[Dict]:
@@ -382,7 +375,7 @@ def formatear_chunk_para_contexto(chunk: Dict) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🛠️ PROMPT Y CLASIFICACIÓN
+# PROMPT Y CLASIFICACIÓN
 # ══════════════════════════════════════════════════════════════════════
 
 def obtener_prompt_para_tarea(tarea: str, context: str, question: str) -> str:
@@ -408,7 +401,7 @@ def clasificar_consulta(pregunta: str, tarea_forzada: str = None) -> tuple:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 📚 TAREA 1: CONSULTAS SIFODS
+# TAREA 1: CONSULTAS SIFODS
 # ══════════════════════════════════════════════════════════════════════
 
 async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
@@ -440,7 +433,7 @@ async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🎯 TAREA 2: RECOMENDACIÓN DE CURSOS
+# TAREA 2: RECOMENDACIÓN DE CURSOS
 # ══════════════════════════════════════════════════════════════════════
 
 def _formatear_respuesta_recomendaciones(recs: List[Dict]) -> str:
@@ -512,7 +505,7 @@ async def procesar_recomendacion_cursos(request: RecomendacionRequest) -> Dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 💾 PERSISTENCIA (usa connection pool)
+# PERSISTENCIA (usa connection pool)
 # ══════════════════════════════════════════════════════════════════════
 
 def _guardar(usuario, nombre, mensaje, respuesta, tarea, fuente, te, ts_tok, lat):
@@ -563,7 +556,7 @@ def guardar_conversacion_recomendacion(request: RecomendacionRequest, resultado:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🌐 ENDPOINTS
+# ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
 @app.on_event("startup")
@@ -700,7 +693,7 @@ async def refrescar_recomendador():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 🚀 SERVIDOR
+# SERVIDOR
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
@@ -709,5 +702,5 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=int(os.getenv("PORT", 7002)),
-        reload=False   # False: el recomendador vive en memoria global
+        reload=False 
     )
