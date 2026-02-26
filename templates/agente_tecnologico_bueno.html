@@ -1394,7 +1394,8 @@ async function cargarRecomendaciones() {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                usuario: USUARIO_DNI
+                usuario:  USUARIO_DNI,
+                top_k:    3
             })
         });
 
@@ -1546,7 +1547,8 @@ async function fetchJustificacion(curso) {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                usuario: USUARIO_DNI
+                usuario: USUARIO_DNI,
+                top_k:   1
             })
         });
 

@@ -1,164 +1,142 @@
 """
-AGENTE TECNOLÓGICO - DIFODS
+APLICACIÓN DEL AGENTE TECNOLÓGICO DIFODS
+======================================
+FastAPI principal. Orquesta los dos módulos:
+  1. SIFODS   → RAG sobre Qdrant (consultas de plataforma)
+  2. Cursos   → Filtro colaborativo híbrido (recomendación)
 
-Correcciones respecto a v2.1:
-    - Connection pooling (psycopg2.pool.ThreadedConnectionPool)
-    - gemini_model inicializado condicionalmente (no falla si key es None)
-    - refrescar_recomendador usa swap seguro (instancia nueva)
+Toda la configuración viene de config/settings.py → .env
 """
 
-import os
 import logging
+import ssl
+import certifi
+import warnings
+from datetime import datetime
+from typing import Optional, List, Dict
+from zoneinfo import ZoneInfo
+
 import pandas as pd
 import tiktoken
-
-from typing import Optional, List, Dict
-from datetime import datetime
-from zoneinfo import ZoneInfo
+import psycopg2
+from psycopg2 import pool as pg_pool
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from dotenv import load_dotenv
 from openai import OpenAI
 from google import genai
-
-import psycopg2
-from psycopg2 import pool as pg_pool
-
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 
+from config.settings import settings
+from config.prompts import (
+    PROMPT_BASE,
+    PROMPT_SIFODS,
+    MENSAJES_AYUDA,
+)
+
 from sistema_recomendacion import HybridRecommender, crear_recomendador
 
-from agente_tecnologico_config import (
-    AGENTE_CONFIG, TAREA_SIFODS, TAREA_RECOMENDACION,
-    PARAMETROS_GLOBALES, MENSAJES_AYUDA, PROMPT_BASE
-)
-
-import ssl, certifi
 ssl._create_default_https_context = ssl.create_default_context(cafile=certifi.where())
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable")
 
-import warnings
-warnings.filterwarnings(
-    "ignore",
-    message="pandas only supports SQLAlchemy connectable"
-)
-# ══════════════════════════════════════════════════════════════════════
-# CONFIGURACIÓN INICIAL
-# ══════════════════════════════════════════════════════════════════════
-
-load_dotenv()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=settings.servidor.log_level)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title=AGENTE_CONFIG["nombre"],
-    version=AGENTE_CONFIG["version"],
-    description=AGENTE_CONFIG["descripcion"]
-)
+LIMA_TZ = ZoneInfo("America/Lima")
 
-templates = Jinja2Templates(directory="templates")
+# ══════════════════════════════════════════════════════════════════════
+# COLUMNAS ESPERADAS EN LA TABLA
+# ══════════════════════════════════════════════════════════════════════
 
-_openai_key = os.getenv("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=_openai_key) if _openai_key else None
-
-if not openai_client:
-    logger.warning("⚠️  OPENAI_API_KEY no definida → se usará solo Gemini")
-
-_gemini_key   = os.getenv("GEMINI_API_KEY")
-gemini_model  = genai.Client(api_key=_gemini_key) if _gemini_key else None
-if not gemini_model:
-    logger.warning("⚠️  GEMINI_API_KEY no definida → sin fallback LLM para SIFODS")
-
-qdrant_client   = QdrantClient(
-    url=os.getenv("QDRANT_URL", "http://localhost:6333"),
-    api_key=os.getenv("QDRANT_API_KEY") or None
-)
-embedding_model = SentenceTransformer(
-    'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
-)
-tokenizer = tiktoken.encoding_for_model("gpt-4o-mini")
-LIMA_TZ   = ZoneInfo("America/Lima")
-
-recomendador: Optional[HybridRecommender] = None
-
-# ──────────────────────────────────────────────────────────────────────
-# Columnas esperadas en la tabla/Excel de recomendación
-# ──────────────────────────────────────────────────────────────────────
 COLUMNAS_RECOMENDACION = [
     "AÑO", "TIPO_CONSTANCIA", "CURSO", "NOMBRE_DRE", "NOMBRE_UGEL",
     "USUARIO_DOCUMENTO", "NOMBRE_COMPLETO", "NIVELNEXUS",
     "APROBACION", "ID_OFERTA_FORMATIVA", "ID_GRUPO",
     "FECHA_NACIMIENTO", "ES_FOCALIZADO", "HORAS_PROGRAMA",
-    "CALIFICACIONES",
-    "PROPOSITO", "ACTIVO", "PUBLICO_OBJETIVO", "CURSO_CULMINADO", "EDAD",
+    "CALIFICACIONES", "PROPOSITO", "ACTIVO", "PUBLICO_OBJETIVO",
+    "CURSO_CULMINADO", "EDAD",
 ]
 
-
 # ══════════════════════════════════════════════════════════════════════
-# MODELOS DE DATOS (Pydantic)
+# MODELOS PYDANTIC
 # ══════════════════════════════════════════════════════════════════════
-
-class ConsultaRequest(BaseModel):
-    mensaje:        str
-    usuario:        str
-    nombre_usuario: Optional[str] = None
-    metadata:       Optional[Dict] = None
-
 
 class RecomendacionRequest(BaseModel):
     usuario:        str
     nombre_usuario: Optional[str] = None
-    top_k:          int = 3
+    top_k:          Optional[int] = None
+
+# ══════════════════════════════════════════════════════════════════════
+# APLICACIÓN FASTAPI
+# ══════════════════════════════════════════════════════════════════════
+
+app = FastAPI(
+    title       = settings.agente.nombre,
+    version     = settings.agente.version,
+    description = settings.agente.descripcion,
+)
+
+templates = Jinja2Templates(directory="templates")
+
+# ══════════════════════════════════════════════════════════════════════
+# CLIENTES EXTERNOS
+# ══════════════════════════════════════════════════════════════════════
+
+openai_client: Optional[OpenAI] = (
+    OpenAI(api_key=settings.llm.openai_api_key) if settings.llm.tiene_openai else None
+)
+
+gemini_model = None
+if settings.llm.tiene_gemini:
+    try:
+        gemini_model = genai.Client(api_key=settings.llm.gemini_api_key)
+    except Exception as e:
+        logger.warning(f"⚠️  Gemini no disponible: {e}")
+
+qdrant_client = QdrantClient(
+    url     = settings.qdrant.url,
+    api_key = settings.qdrant.api_key or None,
+)
+
+embedding_model = SentenceTransformer(settings.llm.embedding_model)
+tokenizer       = tiktoken.encoding_for_model("gpt-4o-mini")
+
+recomendador: Optional[HybridRecommender] = None
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CONNECTION POOL (reemplaza conexión-por-request)
+# CONNECTION POOL POSTGRESQL
 # ══════════════════════════════════════════════════════════════════════
 
 _db_pool: Optional[pg_pool.ThreadedConnectionPool] = None
 
 
-def _get_pool_kwargs() -> dict:
-    return dict(
-        host=os.getenv("DB_HOST", "localhost"),
-        database=os.getenv("DB_NAME", "agente_tecnologico"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD"),
-        port=int(os.getenv("DB_PORT", 5432)),
-        client_encoding="UTF8"
-    )
-
-
-def inicializar_pool():
-    """Crea el pool de conexiones al arrancar el servidor."""
+def inicializar_pool() -> None:
     global _db_pool
     try:
         _db_pool = pg_pool.ThreadedConnectionPool(
-            minconn=2,
-            maxconn=10,
-            **_get_pool_kwargs()
+            minconn = settings.db.pool_min,
+            maxconn = settings.db.pool_max,
+            **settings.db.as_dict(),
         )
-        logger.info("✅ Connection pool PostgreSQL creado (2-10 conexiones)")
+        logger.info(
+            f"✅ Connection pool PostgreSQL ({settings.db.pool_min}–{settings.db.pool_max})"
+        )
     except Exception as e:
         logger.error(f"❌ No se pudo crear connection pool: {e}")
         _db_pool = None
 
 
 def get_db_connection():
-    """
-    Obtiene una conexión del pool.
-    Usar con contextmanager o devolver con devolver_conexion().
-    """
     if _db_pool:
         return _db_pool.getconn()
-    return psycopg2.connect(**_get_pool_kwargs())
+    return psycopg2.connect(**settings.db.as_dict())
 
 
-def devolver_conexion(conn):
-    """Devuelve la conexión al pool (o cierra si es conexión directa)."""
+def devolver_conexion(conn) -> None:
     if _db_pool and conn:
         _db_pool.putconn(conn)
     elif conn:
@@ -168,49 +146,6 @@ def devolver_conexion(conn):
 def normalizar_texto(texto: str) -> str:
     return (texto or "").encode("utf-8", errors="ignore").decode("utf-8")
 
-
-def crear_tablas():
-    """Crea las tablas operacionales del agente si no existen."""
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur  = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS conversaciones_agente (
-                id              SERIAL PRIMARY KEY,
-                usuario         VARCHAR(100) NOT NULL,
-                nombre_usuario  VARCHAR(200),
-                mensaje         TEXT NOT NULL,
-                respuesta       TEXT NOT NULL,
-                tarea           VARCHAR(20) NOT NULL,
-                fuente_datos    VARCHAR(50),
-                tokens_entrada  INTEGER,
-                tokens_salida   INTEGER,
-                latencia_ms     INTEGER,
-                timestamp       TIMESTAMPTZ DEFAULT NOW()
-            )
-        """)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS metricas (
-                id                   SERIAL PRIMARY KEY,
-                fecha                DATE NOT NULL,
-                tarea                VARCHAR(20) NOT NULL,
-                total_consultas      INTEGER DEFAULT 0,
-                latencia_promedio_ms INTEGER,
-                tokens_totales       INTEGER,
-                fecha_actualizacion  TIMESTAMPTZ DEFAULT NOW(),
-                UNIQUE(fecha, tarea)
-            )
-        """)
-        conn.commit()
-        logger.info("✅ Tablas operacionales verificadas/creadas")
-    except Exception as e:
-        if conn: conn.rollback()
-        logger.error(f"Error creando tablas: {e}")
-    finally:
-        devolver_conexion(conn)
-
-
 # ══════════════════════════════════════════════════════════════════════
 # CARGA DE DATOS PARA EL RECOMENDADOR
 # ══════════════════════════════════════════════════════════════════════
@@ -219,19 +154,13 @@ def _seleccionar_columnas(df: pd.DataFrame) -> pd.DataFrame:
     cols_presentes = [c for c in COLUMNAS_RECOMENDACION if c in df.columns]
     cols_faltantes = [c for c in COLUMNAS_RECOMENDACION if c not in df.columns]
     if cols_faltantes:
-        logger.warning(f"⚠️  Columnas no encontradas en la fuente: {cols_faltantes}")
+        logger.warning(f"⚠️  Columnas no encontradas: {cols_faltantes}")
     return df[cols_presentes]
 
 
 def cargar_desde_postgres() -> pd.DataFrame:
-    tabla  = os.getenv("DB_TABLE_RECOMENDACION")
-    schema = os.getenv("DB_SCHEMA", "public")
-
-    if not tabla:
-        raise EnvironmentError(
-            "DB_TABLE_RECOMENDACION no definida. "
-            "Ej: DB_TABLE_RECOMENDACION=inscripciones_cursos"
-        )
+    tabla  = settings.db.tabla_recomendacion
+    schema = settings.db.schema
 
     conn = get_db_connection()
     try:
@@ -245,19 +174,16 @@ def cargar_desde_postgres() -> pd.DataFrame:
 
 
 def cargar_desde_excel() -> pd.DataFrame:
-    path_env = os.getenv("EXCEL_FALLBACK_PATH")
-
-    if not path_env:
-        raise EnvironmentError("EXCEL_FALLBACK_PATH no definida.")
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, path_env)
+    import os
+    path_env  = settings.db.excel_fallback_path
+    base_dir  = os.path.dirname(os.path.abspath(__file__))
+    path      = os.path.join(base_dir, path_env)
 
     logger.info(f"📂 Buscando Excel en: {path}")
-
     if not os.path.exists(path):
         raise FileNotFoundError(f"Excel no encontrado: {path}")
 
-    sheet_raw = os.getenv("EXCEL_SHEET_NAME", "0")
+    sheet_raw = settings.db.excel_sheet_name
     try:
         sheet = int(sheet_raw)
     except ValueError:
@@ -265,32 +191,28 @@ def cargar_desde_excel() -> pd.DataFrame:
 
     df = pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
     df.columns = [c.strip().upper() for c in df.columns]
-
-    logger.info(f"✅ Excel → {len(df):,} registros desde {path} (hoja: {sheet})")
+    logger.info(f"✅ Excel → {len(df):,} registros (hoja: {sheet})")
     return _seleccionar_columnas(df)
 
 
 def cargar_dataframe_recomendacion() -> tuple[pd.DataFrame, str]:
-    """
-    Retorna (df, fuente) donde fuente es 'postgresql' o 'excel'.
-    """
+    """Retorna (df, fuente) probando primero PostgreSQL, luego Excel."""
     try:
         logger.info("🔄 Cargando datos desde PostgreSQL...")
-        df = cargar_desde_postgres()
-        return df, "postgresql"
+        return cargar_desde_postgres(), "postgresql"
     except Exception as e_pg:
         logger.warning(f"⚠️  PostgreSQL falló: {e_pg}")
 
     try:
         logger.info("🔄 Fallback: cargando desde Excel...")
-        df = cargar_desde_excel()
-        return df, "excel"
+        return cargar_desde_excel(), "excel"
     except Exception as e_xl:
         logger.error(f"❌ Excel también falló: {e_xl}")
 
     raise RuntimeError(
         "No se pudo cargar datos desde PostgreSQL ni desde Excel. "
-        "Revisa DB_TABLE_RECOMENDACION y EXCEL_FALLBACK_PATH en .env"
+        f"Revisa DB_TABLE_RECOMENDACION='{settings.db.tabla_recomendacion}' "
+        f"y EXCEL_FALLBACK_PATH='{settings.db.excel_fallback_path}' en .env"
     )
 
 
@@ -298,7 +220,7 @@ def inicializar_recomendador() -> Optional[HybridRecommender]:
     try:
         df, fuente = cargar_dataframe_recomendacion()
         rec = crear_recomendador(df)
-        rec._fuente_datos = fuente 
+        rec._fuente_datos = fuente
         return rec
     except Exception as e:
         logger.warning(
@@ -309,33 +231,31 @@ def inicializar_recomendador() -> Optional[HybridRecommender]:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# LLM CON FALLBACK (GPT → Gemini) — para consultas SIFODS
+# LLM CON FALLBACK (GPT → Gemini)
 # ══════════════════════════════════════════════════════════════════════
 
 async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
-    # Intento 1: OpenAI
     if openai_client:
         try:
             resp = openai_client.chat.completions.create(
-                model=PARAMETROS_GLOBALES["modelo_llm"],
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=model_params["max_tokens"],
-                temperature=model_params["temperature"]
+                model       = settings.llm.modelo_principal,
+                messages    = [{"role": "user", "content": prompt}],
+                max_tokens  = model_params["max_tokens"],
+                temperature = model_params["temperature"],
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
             logger.warning(f"⚠️  OpenAI falló: {e} → Gemini...")
 
-    # Intento 2: Gemini (solo si está disponible)
     if gemini_model:
         try:
             resp = gemini_model.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config={
+                model    = settings.llm.modelo_fallback,
+                contents = prompt,
+                config   = {
                     "temperature":       model_params["temperature"],
                     "max_output_tokens": model_params["max_tokens"],
-                }
+                },
             )
             return resp.text.strip()
         except Exception as e2:
@@ -348,13 +268,13 @@ async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
 # QDRANT
 # ══════════════════════════════════════════════════════════════════════
 
-def search_qdrant(query: str, collection_name: str = "Curso_0", k: int = 10) -> List[Dict]:
+def search_qdrant(query: str) -> List[Dict]:
     try:
         emb    = embedding_model.encode(query).tolist()
         result = qdrant_client.query_points(
-            collection_name=collection_name,
-            query=emb,
-            limit=k
+            collection_name = settings.qdrant.coleccion,
+            query           = emb,
+            limit           = settings.qdrant.top_k,
         )
         return [
             {
@@ -370,35 +290,13 @@ def search_qdrant(query: str, collection_name: str = "Curso_0", k: int = 10) -> 
         return []
 
 
-def formatear_chunk_para_contexto(chunk: Dict) -> str:
+def _formatear_chunk(chunk: Dict) -> str:
     return f"[{chunk.get('filename', 'Documento')}]\n{chunk.get('text', '')}\n"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT Y CLASIFICACIÓN
+# CLASIFICACIÓN DE CONSULTAS
 # ══════════════════════════════════════════════════════════════════════
-
-def obtener_prompt_para_tarea(tarea: str, context: str, question: str) -> str:
-    config = TAREA_SIFODS if tarea == "sifods" else TAREA_RECOMENDACION
-    return PROMPT_BASE.format(context=context, question=question) + "\n\n" + config["prompt_especializado"]
-
-
-def obtener_parametros_modelo(tarea: str) -> dict:
-    if tarea == "sifods":        return TAREA_SIFODS["parametros_modelo"]
-    if tarea == "recomendacion": return TAREA_RECOMENDACION["parametros_modelo"]
-    return PARAMETROS_GLOBALES
-
-
-def clasificar_consulta(pregunta: str, tarea_forzada: str = None) -> tuple:
-    if tarea_forzada and tarea_forzada in ("sifods", "recomendacion"):
-        return (tarea_forzada, 1.0)
-    q = pregunta.lower()
-    if any(kw in q for kw in TAREA_SIFODS["keywords_deteccion"]):
-        return ("sifods", 0.85)
-    if any(kw in q for kw in TAREA_RECOMENDACION["keywords_deteccion"]):
-        return ("recomendacion", 0.85)
-    return ("sifods", 0.5)
-
 
 # ══════════════════════════════════════════════════════════════════════
 # TAREA 1: CONSULTAS SIFODS
@@ -406,7 +304,7 @@ def clasificar_consulta(pregunta: str, tarea_forzada: str = None) -> tuple:
 
 async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
     ts     = datetime.now(LIMA_TZ)
-    chunks = search_qdrant(mensaje, TAREA_SIFODS["coleccion_qdrant"], PARAMETROS_GLOBALES["limite_contexto"])
+    chunks = search_qdrant(mensaje)
 
     if not chunks:
         return {
@@ -416,9 +314,9 @@ async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
             "referencias":  [],
         }
 
-    context   = "\n\n".join(formatear_chunk_para_contexto(c) for c in chunks)
-    prompt    = obtener_prompt_para_tarea("sifods", context, mensaje)
-    respuesta = await llamar_llm_con_fallback(prompt, obtener_parametros_modelo("sifods"))
+    context   = "\n\n".join(_formatear_chunk(c) for c in chunks)
+    prompt    = PROMPT_BASE.format(context=context, question=mensaje) + "\n\n" + PROMPT_SIFODS
+    respuesta = await llamar_llm_con_fallback(prompt, settings.sifods.parametros_modelo)
     latencia  = int((datetime.now(LIMA_TZ) - ts).total_seconds() * 1000)
 
     return {
@@ -447,7 +345,7 @@ def _formatear_respuesta_recomendaciones(recs: List[Dict]) -> str:
         texto   += f"**{i}. {r.get('CURSO', 'Curso')}**\n"
         texto   += f"   🎯 {r.get('justificacion', 'Relevante para tu perfil')}\n"
         texto   += f"   ⏱️ {r.get('HORAS_PROGRAMA', 0)}h  |  "
-        texto   += f"✅ {r.get('TASA_CULMINACION', 0)*100:.0f}% culminación"
+        texto   += f"✅ {r.get('TASA_CULMINACION', 0) * 100:.0f}% culminación"
         if text_cal:
             texto += f"  |  {text_cal}"
         texto += "\n"
@@ -460,15 +358,11 @@ def _formatear_respuesta_recomendaciones(recs: List[Dict]) -> str:
 
 
 async def procesar_recomendacion_cursos(request: RecomendacionRequest) -> Dict:
-    global recomendador
     ts = datetime.now(LIMA_TZ)
 
     if recomendador is None:
         return {
-            "respuesta":       (
-                "⚠️ El sistema de recomendación no está disponible. "
-                "Verifica la conexión a la base de datos o el Excel de respaldo."
-            ),
+            "respuesta":       MENSAJES_AYUDA["recomendador_no_disponible"],
             "tarea":           "recomendacion",
             "fuente_datos":    "no_disponible",
             "recomendaciones": [],
@@ -478,13 +372,15 @@ async def procesar_recomendacion_cursos(request: RecomendacionRequest) -> Dict:
         }
 
     try:
+        top_k = request.top_k if request.top_k and request.top_k > 0 else settings.recomendacion.top_k
+
         recs = recomendador.recomendar_hibrido(
-            user_id=str(request.usuario),
-            top_k=request.top_k,
-            incluir_justificacion=True
+            user_id              = str(request.usuario),
+            top_k                = top_k,
+            incluir_justificacion= True,
         )
 
-        latencia      = int((datetime.now(LIMA_TZ) - ts).total_seconds() * 1000)
+        latencia     = int((datetime.now(LIMA_TZ) - ts).total_seconds() * 1000)
         tokens_salida = sum(len(tokenizer.encode(r.get("justificacion", ""))) for r in recs)
         metodos       = list({m for r in recs for m in r.get("metodos_usados", [])})
 
@@ -505,10 +401,16 @@ async def procesar_recomendacion_cursos(request: RecomendacionRequest) -> Dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PERSISTENCIA (usa connection pool)
+# PERSISTENCIA
 # ══════════════════════════════════════════════════════════════════════
 
-def _guardar(usuario, nombre, mensaje, respuesta, tarea, fuente, te, ts_tok, lat):
+def _guardar(usuario, nombre, mensaje, respuesta, tarea, fuente, te, ts_tok, lat) -> Optional[int]:
+    """
+    Inserta en conversaciones_agente y retorna el id generado.
+    Retorna None si guardar_conversaciones=False o si falla.
+    """
+    if not settings.servidor.guardar_conversaciones:
+        return None
     conn = None
     try:
         conn = get_db_connection()
@@ -518,59 +420,183 @@ def _guardar(usuario, nombre, mensaje, respuesta, tarea, fuente, te, ts_tok, lat
             (usuario, nombre_usuario, mensaje, respuesta, tarea,
              fuente_datos, tokens_entrada, tokens_salida, latencia_ms)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
         """, (
             normalizar_texto(usuario),
             normalizar_texto(nombre or ""),
             normalizar_texto(mensaje),
             normalizar_texto(respuesta),
-            tarea, fuente, te, ts_tok, lat
+            tarea, fuente, te, ts_tok, lat,
         ))
+        conversacion_id = cur.fetchone()[0]
         conn.commit()
+        return conversacion_id
     except Exception as e:
         if conn:
-            try: conn.rollback()
-            except: pass
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         logger.warning(f"No se pudo guardar conversación: {e}")
+        return None
     finally:
         devolver_conexion(conn)
 
 
-def guardar_conversacion(request: ConsultaRequest, resultado: Dict):
+def _guardar_detalle_recomendaciones(
+    conversacion_id: int,
+    usuario: str,
+    recomendaciones: List[Dict],
+) -> None:
+    """
+    Inserta una fila en recomendaciones_detalle por cada curso recomendado.
+    Guarda scores individuales y la justificación del LLM.
+    """
+    if not conversacion_id or not recomendaciones:
+        return
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+        for i, rec in enumerate(recomendaciones, 1):
+            scores = rec.get("scores_detalle", {})
+            cur.execute("""
+                INSERT INTO recomendaciones_detalle (
+                    conversacion_id, usuario, posicion,
+                    id_oferta_formativa, curso, horas_programa, publico_objetivo,
+                    tasa_culminacion, tasa_aprobacion, calificacion_prom,
+                    score_final, score_colaborativo, score_popularidad,
+                    score_historial, score_novedad, algoritmos_usados,
+                    justificacion
+                ) VALUES (
+                    %s,%s,%s, %s,%s,%s,%s, %s,%s,%s, %s,%s,%s,%s,%s,%s, %s
+                )
+            """, (
+                conversacion_id,
+                normalizar_texto(usuario),
+                i,
+                rec.get("ID_OFERTA_FORMATIVA"),
+                normalizar_texto(rec.get("CURSO", "")),
+                rec.get("HORAS_PROGRAMA"),
+                normalizar_texto(rec.get("PUBLICO_OBJETIVO", "")),
+                rec.get("TASA_CULMINACION"),
+                rec.get("TASA_APROBACION"),
+                rec.get("CALIFICACION_PROM"),
+                rec.get("score_final"),
+                scores.get("colaborativo"),
+                scores.get("popularidad"),
+                scores.get("historial"),
+                scores.get("novedad"),
+                rec.get("metodos_usados", []),
+                normalizar_texto(rec.get("justificacion", "")),
+            ))
+        conn.commit()
+        logger.info(f"✅ Detalle guardado: {len(recomendaciones)} cursos para conversacion {conversacion_id}")
+    except Exception as e:
+        if conn:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        logger.warning(f"No se pudo guardar detalle de recomendaciones: {e}")
+    finally:
+        devolver_conexion(conn)
+
+
+def guardar_conversacion_sifods(usuario: str, nombre: str, mensaje: str, resultado: Dict) -> None:
     _guardar(
-        request.usuario, request.nombre_usuario,
-        request.mensaje, resultado["respuesta"],
+        usuario, nombre,
+        mensaje, resultado["respuesta"],
         resultado["tarea"], resultado.get("fuente_datos"),
         resultado.get("tokens_entrada"), resultado.get("tokens_salida"),
-        resultado.get("latencia_ms")
+        resultado.get("latencia_ms"),
     )
 
 
-def guardar_conversacion_recomendacion(request: RecomendacionRequest, resultado: Dict):
-    _guardar(
+def guardar_conversacion_recomendacion(request: RecomendacionRequest, resultado: Dict) -> None:
+    top_k = request.top_k or settings.recomendacion.top_k
+    conversacion_id = _guardar(
         request.usuario, request.nombre_usuario,
-        f"Recomendación (top {request.top_k})", resultado["respuesta"],
+        f"Recomendación (top {top_k})", resultado["respuesta"],
         "recomendacion", resultado.get("fuente_datos"),
         resultado.get("tokens_entrada"), resultado.get("tokens_salida"),
-        resultado.get("latencia_ms")
+        resultado.get("latencia_ms"),
+    )
+    _guardar_detalle_recomendaciones(
+        conversacion_id  = conversacion_id,
+        usuario          = request.usuario,
+        recomendaciones  = resultado.get("recomendaciones", []),
     )
 
 
-# ══════════════════════════════════════════════════════════════════════
-# ENDPOINTS
-# ══════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════
+# LIFECYCLE
+# ══════════════════════════════════════════════════════════════════════
+def verificar_schema() -> bool:
+    """
+    Verifica que las tablas operacionales del agente existan en la BD.
+    NO crea ni modifica nada — solo informa.
+
+    Las tablas de negocio (inscripciones, cursos, docentes) son externas
+    y se configuran en .env — no son responsabilidad de este check.
+
+    Retorna True si todo está OK, False si falta algo.
+    """
+    TABLAS_AGENTE  = ["conversaciones_agente", "recomendaciones_detalle"]
+    VISTAS_AGENTE  = ["v_metricas_diarias", "v_historial_recomendaciones"]
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur  = conn.cursor()
+
+        cur.execute(
+            "SELECT tablename FROM pg_tables WHERE schemaname = %s",
+            (settings.db.schema,)
+        )
+        tablas_existentes = {row[0] for row in cur.fetchall()}
+
+        cur.execute(
+            "SELECT viewname FROM pg_views WHERE schemaname = %s",
+            (settings.db.schema,)
+        )
+        vistas_existentes = {row[0] for row in cur.fetchall()}
+
+        tablas_faltantes = [t for t in TABLAS_AGENTE if t not in tablas_existentes]
+        vistas_faltantes = [v for v in VISTAS_AGENTE  if v not in vistas_existentes]
+        todo_faltante    = tablas_faltantes + vistas_faltantes
+
+        if not todo_faltante:
+            logger.info("✅ BD verificada — tablas operacionales OK")
+            return True
+
+        logger.error(
+            f"❌ Faltan objetos en la BD: {todo_faltante}\n"
+            f"   Ejecuta el schema antes de iniciar el agente:\n"
+            f"   psql -U {settings.db.user} -d {settings.db.name} "
+            f"-f schema_recomendacion.sql"
+        )
+        return False
+
+    except Exception as e:
+        logger.error(f"❌ No se pudo verificar la BD: {e}")
+        return False
+    finally:
+        devolver_conexion(conn)
+        
 @app.on_event("startup")
 async def startup_event():
     global recomendador
     inicializar_pool()
-    crear_tablas()
     logger.info("🔄 Inicializando recomendador...")
     recomendador = inicializar_recomendador()
     logger.info(
-        f"🚀 {AGENTE_CONFIG['nombre']} v{AGENTE_CONFIG['version']} | "
-        f"Puerto: {os.getenv('PORT', 7002)} | "
+        f"🚀 {settings.agente.nombre} v{settings.agente.version} | "
+        f"Puerto: {settings.servidor.port} | "
         f"Recomendador: {'✅ activo' if recomendador else '⚠️  no disponible'} | "
-        f"Gemini: {'✅' if gemini_model else '⚠️  no configurado'}"
+        f"Gemini: {'✅' if gemini_model else '⚠️  no configurado'} | "
+        f"top_k default: {settings.recomendacion.top_k}"
     )
 
 
@@ -580,11 +606,15 @@ async def shutdown_event():
         _db_pool.closeall()
         logger.info("🔒 Connection pool cerrado")
 
+# ══════════════════════════════════════════════════════════════════════
+# ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(
-        "agente_tecnologico.html", {"request": request, "agente": AGENTE_CONFIG}
+        "agente_tecnologico.html",
+        {"request": request, "agente": settings.agente.__dict__},
     )
 
 
@@ -592,63 +622,50 @@ async def home(request: Request):
 async def health_check():
     return {
         "status":              "healthy",
-        "agente":              AGENTE_CONFIG["id_agente"],
-        "version":             AGENTE_CONFIG["version"],
+        **settings.resumen(),
         "recomendador_activo": recomendador is not None,
         "fuente_datos":        getattr(recomendador, "_fuente_datos", "sin_datos"),
-        "gemini_disponible":   gemini_model is not None,
         "db_pool_activo":      _db_pool is not None,
-        "timestamp":           datetime.now(LIMA_TZ).isoformat()
+        "timestamp":           datetime.now(LIMA_TZ).isoformat(),
     }
 
 
-@app.post("/api/consulta")
-async def procesar_consulta(request: ConsultaRequest):
+@app.post("/api/sifods")
+async def consulta_sifods(
+    mensaje:        str,
+    usuario:        str,
+    nombre_usuario: Optional[str] = None,
+):
+    """
+    Módulo RAG — responde preguntas sobre la plataforma SIFODS.
+    Busca contexto en Qdrant y genera respuesta con el LLM.
+    """
     try:
-        tarea_forzada       = (request.metadata or {}).get("tarea_forzada")
-        categoria, confianza = clasificar_consulta(request.mensaje, tarea_forzada)
-
-        if categoria == "sifods":
-            resultado = await procesar_consulta_sifods(request.mensaje, request.usuario)
-        elif categoria == "recomendacion":
-            resultado = await procesar_recomendacion_cursos(
-                RecomendacionRequest(
-                    usuario=request.usuario,
-                    nombre_usuario=request.nombre_usuario
-                )
-            )
-        else:
-            resultado = {
-                "respuesta":    MENSAJES_AYUDA["consulta_ambigua"],
-                "tarea":        "aclaracion",
-                "fuente_datos": "ninguna",
-            }
-
-        guardar_conversacion(request, resultado)
-
+        resultado = await procesar_consulta_sifods(mensaje, usuario)
+        guardar_conversacion_sifods(usuario, nombre_usuario, mensaje, resultado)
         return {
-            "respuesta":       resultado["respuesta"],
-            "tarea":           resultado["tarea"],
-            "fuente_datos":    resultado.get("fuente_datos"),
-            "referencias":     resultado.get("referencias", []),
-            "recomendaciones": resultado.get("recomendaciones", []),
+            "respuesta":    resultado["respuesta"],
+            "fuente_datos": resultado.get("fuente_datos"),
+            "referencias":  resultado.get("referencias", []),
             "metadata": {
-                "tokens_entrada":          resultado.get("tokens_entrada"),
-                "tokens_salida":           resultado.get("tokens_salida"),
-                "latencia_ms":             resultado.get("latencia_ms"),
-                "confianza_clasificacion": confianza,
-            }
+                "tokens_entrada": resultado.get("tokens_entrada"),
+                "tokens_salida":  resultado.get("tokens_salida"),
+                "latencia_ms":    resultado.get("latencia_ms"),
+            },
         }
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error en /api/consulta: {e}")
+        logger.error(f"Error en /api/sifods: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/recomendar")
 async def recomendar_cursos(request: RecomendacionRequest):
-    logger.info(f"📨 Request recibido → usuario: {request.usuario} | top_k: {request.top_k}")
+    logger.info(
+        f"📨 /api/recomendar → usuario: {request.usuario} | "
+        f"top_k: {request.top_k or settings.recomendacion.top_k}"
+    )
     try:
         resultado = await procesar_recomendacion_cursos(request)
         guardar_conversacion_recomendacion(request, resultado)
@@ -656,11 +673,12 @@ async def recomendar_cursos(request: RecomendacionRequest):
             "recomendaciones":      resultado["recomendaciones"],
             "respuesta_formateada": resultado["respuesta"],
             "metadata": {
-                "latencia_ms": resultado.get("latencia_ms"),
-                "algoritmos":  resultado.get("metadata", {}).get("algoritmos", []),
-                "total":       resultado.get("metadata", {}).get("total", 0),
+                "latencia_ms":  resultado.get("latencia_ms"),
+                "algoritmos":   resultado.get("metadata", {}).get("algoritmos", []),
+                "total":        resultado.get("metadata", {}).get("total", 0),
                 "fuente_datos": resultado.get("fuente_datos"),
-            }
+                "top_k_usado":  len(resultado.get("recomendaciones", [])),
+            },
         }
     except HTTPException:
         raise
@@ -681,15 +699,41 @@ async def refrescar_recomendador():
         df, fuente   = cargar_dataframe_recomendacion()
         nuevo_rec    = crear_recomendador(df)
         nuevo_rec._fuente_datos = fuente
-        recomendador = nuevo_rec   # swap atómico
+        recomendador = nuevo_rec
         return {
-            "status":      "ok",
-            "registros":   len(df),
-            "fuente":      fuente,
-            "timestamp":   datetime.now(LIMA_TZ).isoformat()
+            "status":    "ok",
+            "registros": len(df),
+            "fuente":    fuente,
+            "top_k":     settings.recomendacion.top_k,
+            "timestamp": datetime.now(LIMA_TZ).isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/config")
+async def ver_config():
+    """
+    Muestra la configuración activa (sin secrets).
+    Útil para depuración en desarrollo.
+    """
+    return {
+        **settings.resumen(),
+        "sifods": {
+            "max_tokens":  settings.sifods.max_tokens,
+            "temperature": settings.sifods.temperature,
+        },
+        "justificacion": {
+            "max_tokens":  settings.justificacion.max_tokens,
+            "temperature": settings.justificacion.temperature,
+        },
+        "db": {
+            "host":   settings.db.host,
+            "name":   settings.db.name,
+            "schema": settings.db.schema,
+            "tabla":  settings.db.tabla_recomendacion,
+        },
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -700,7 +744,7 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 7002)),
-        reload=False 
+        host   = "0.0.0.0",
+        port   = settings.servidor.port,
+        reload = False,
     )
