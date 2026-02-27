@@ -913,6 +913,18 @@
         }
         .btn-modal-primary:active:not(:disabled) { transform: translateY(0); }
         .btn-modal-primary:disabled { opacity: .42; cursor: not-allowed; }
+        .btn-modal-cancelar {
+            width: 100%; margin-top: 10px;
+            background: transparent;
+            color: var(--txt-dim); border: 1.5px solid rgba(255,255,255,.12);
+            padding: 11px; border-radius: var(--radius-md);
+            font-size: 13px; font-weight: 500; font-family: "DM Sans", sans-serif;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-modal-cancelar:hover {
+            background: rgba(255,255,255,.06);
+            color: var(--txt-main); border-color: rgba(255,255,255,.25);
+        }
         .modal-footer-note {
             font-size: 11px; color: var(--txt-dim);
             text-align: center; margin-top: 14px; line-height: 1.55;
@@ -1275,6 +1287,12 @@ function abrirModulo(modulo) {
     }
 }
 
+function cancelarModalDni() {
+    // Cierra el modal de DNI y vuelve a la vista de módulos (home)
+    document.getElementById('modal-dni').classList.remove('visible');
+    cerrarModulo();
+}
+
 function cerrarModulo() {
     document.getElementById('panel-sifods').style.display        = 'none';
     document.getElementById('panel-recomendacion').style.display  = 'none';
@@ -1345,13 +1363,12 @@ async function enviarMensaje() {
     mostrarTyping(true);
 
     try {
-        const res  = await fetch(`${API_BASE}/api/consulta`, {
+        const res  = await fetch(`${API_BASE}/api/sifods`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 mensaje,
                 usuario:  USUARIO_DNI || 'anonimo',
-                metadata: { tarea_forzada: 'sifods' }
             })
         });
 
@@ -1532,41 +1549,11 @@ function mostrarJustificacion(curso) {
         return;
     }
 
-    // Si no viene, pedirla al backend
-    fetchJustificacion(curso);
-}
-
-async function fetchJustificacion(curso) {
-    const loading = document.getElementById('just-loading');
-    const content = document.getElementById('just-content');
-    const chips   = document.getElementById('just-chips');
-
-    try {
-        const res = await fetch(`${API_BASE}/api/recomendar`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                usuario: USUARIO_DNI
-            })
-        });
-
-        const data = await res.json();
-        const just = data.recomendaciones?.[0]?.justificacion
-            || curso.justificacion
-            || 'Curso relevante para tu perfil docente.';
-
-        loading.style.display = 'none';
-        content.style.display = 'inline';
-        content.textContent   = just;
-        curso.justificacion   = just; // cachear
-        renderizarChips(curso);
-
-    } catch (err) {
-        loading.style.display = 'none';
-        content.style.display = 'inline';
-        content.textContent   = 'Curso relevante para tu perfil y región educativa.';
-        renderizarChips(curso);
-    }
+    // Fallback: la justificación siempre viene del backend, pero por si acaso
+    loading.style.display = 'none';
+    content.style.display = 'inline';
+    content.textContent   = 'Curso relevante para tu perfil y región educativa.';
+    renderizarChips(curso);
 }
 
 function renderizarChips(curso) {
@@ -1658,6 +1645,9 @@ function horaActual() {
                 onclick="confirmarDni()" disabled>
             <span>Ver mis recomendaciones</span>
             <span>→</span>
+        </button>
+        <button class="btn-modal-cancelar" onclick="cancelarModalDni()">
+            ✕ Cancelar
         </button>
         <div class="modal-footer-note">
             Sin historial en SIFODS, verás igualmente los cursos más relevantes para tu región.

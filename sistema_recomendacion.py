@@ -94,6 +94,32 @@ class HybridRecommender:
         df = df.copy()
         df.columns = [c.strip().upper() for c in df.columns]
 
+        _ALIASES = {
+            "ANIO":               "AÑO",
+            "ANO":                "AÑO",
+            "YEAR":               "AÑO",
+            "anio":               "AÑO",
+            "USUARIO_DOC":        "USUARIO_DOCUMENTO",
+            "DNI":                "USUARIO_DOCUMENTO",
+            "DOCUMENTO":          "USUARIO_DOCUMENTO",
+            "NOMBRE":             "NOMBRE_COMPLETO",
+            "NIVEL":              "NIVELNEXUS",
+            "DRE":                "NOMBRE_DRE",
+            "UGEL":               "NOMBRE_UGEL",
+            "ID_OFERTA":          "ID_OFERTA_FORMATIVA",
+            "OFERTA_FORMATIVA":   "ID_OFERTA_FORMATIVA",
+            "APROBADO":           "APROBACION",
+            "CULMINADO":          "CURSO_CULMINADO",
+            "HORAS":              "HORAS_PROGRAMA",
+            "CALIFICACION":       "CALIFICACIONES",
+            "RATING":             "CALIFICACIONES",
+        }
+        columnas_actuales = set(df.columns)
+        for alias, canonico in _ALIASES.items():
+            if alias in columnas_actuales and canonico not in columnas_actuales:
+                df.rename(columns={alias: canonico}, inplace=True)
+                logger.info(f"🔄 Columna '{alias}' renombrada a '{canonico}'")
+
         missing = COLUMNAS_REQUERIDAS - set(df.columns)
         if missing:
             raise ValueError(f"❌ Faltan columnas requeridas: {missing}")

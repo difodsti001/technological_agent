@@ -97,8 +97,8 @@ POR QUÉ SE RECOMIENDA A ESTE DOCENTE:
 {razones}
 
 TAREA:
-Escribe 2 oraciones cortas (máximo 40 palabras en total) que expliquen \
-de forma personalizada y motivadora por qué este curso es valioso \
+Escribe exactamente 2 oraciones completas (entre 40 y 60 palabras en total) \
+que expliquen de forma personalizada y motivadora por qué este curso es valioso \
 para ESTE docente en particular. \
 Usa datos concretos del curso (calificación, tasa de culminación, horas) \
 y conecta con el perfil del docente (nivel, región). \

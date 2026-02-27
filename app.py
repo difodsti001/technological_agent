@@ -12,6 +12,7 @@ import logging
 import ssl
 import certifi
 import warnings
+import asyncio
 from datetime import datetime
 from typing import Optional, List, Dict
 from zoneinfo import ZoneInfo
@@ -63,6 +64,10 @@ COLUMNAS_RECOMENDACION = [
 # ══════════════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC
 # ══════════════════════════════════════════════════════════════════════
+class SifodsRequest(BaseModel):
+    mensaje:        str
+    usuario:        str
+    nombre_usuario: Optional[str] = None
 
 class RecomendacionRequest(BaseModel):
     usuario:        str
@@ -150,7 +155,41 @@ def normalizar_texto(texto: str) -> str:
 # CARGA DE DATOS PARA EL RECOMENDADOR
 # ══════════════════════════════════════════════════════════════════════
 
+_COLUMN_ALIASES = {
+    "ANIO":             "AÑO",
+    "ANO":              "AÑO",
+    "YEAR":             "AÑO",
+    "USUARIO_DOC":      "USUARIO_DOCUMENTO",
+    "DNI":              "USUARIO_DOCUMENTO",
+    "DOCUMENTO":        "USUARIO_DOCUMENTO",
+    "NOMBRE":           "NOMBRE_COMPLETO",
+    "NIVEL":            "NIVELNEXUS",
+    "DRE":              "NOMBRE_DRE",
+    "UGEL":             "NOMBRE_UGEL",
+    "ID_OFERTA":        "ID_OFERTA_FORMATIVA",
+    "APROBADO":         "APROBACION",
+    "CULMINADO":        "CURSO_CULMINADO",
+    "HORAS":            "HORAS_PROGRAMA",
+    "CALIFICACION":     "CALIFICACIONES",
+    "RATING":           "CALIFICACIONES",
+}
+
+
+def _aplicar_aliases(df: pd.DataFrame) -> pd.DataFrame:
+    """Normaliza nombres de columnas a mayúsculas y aplica aliases."""
+    df = df.copy()
+    df.columns = [c.strip().upper() for c in df.columns]
+    cols = set(df.columns)
+    for alias, canonico in _COLUMN_ALIASES.items():
+        if alias in cols and canonico not in cols:
+            df.rename(columns={alias: canonico}, inplace=True)
+            logger.info(f"🔄 Columna '{alias}' → '{canonico}'")
+            cols = set(df.columns)
+    return df
+
+
 def _seleccionar_columnas(df: pd.DataFrame) -> pd.DataFrame:
+    df = _aplicar_aliases(df)
     cols_presentes = [c for c in COLUMNAS_RECOMENDACION if c in df.columns]
     cols_faltantes = [c for c in COLUMNAS_RECOMENDACION if c not in df.columns]
     if cols_faltantes:
@@ -235,29 +274,42 @@ def inicializar_recomendador() -> Optional[HybridRecommender]:
 # ══════════════════════════════════════════════════════════════════════
 
 async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
+    loop = asyncio.get_event_loop()
+
     if openai_client:
         try:
-            resp = openai_client.chat.completions.create(
-                model       = settings.llm.modelo_principal,
-                messages    = [{"role": "user", "content": prompt}],
-                max_tokens  = model_params["max_tokens"],
-                temperature = model_params["temperature"],
-            )
-            return resp.choices[0].message.content.strip()
+            def _openai():
+                return openai_client.chat.completions.create(
+                    model       = settings.llm.modelo_principal,
+                    messages    = [{"role": "user", "content": prompt}],
+                    max_tokens  = model_params["max_tokens"],
+                    temperature = model_params["temperature"],
+                )
+            resp  = await loop.run_in_executor(None, _openai)
+            texto = resp.choices[0].message.content.strip()
+            logger.info(f"✅ OpenAI | tokens_salida: {resp.usage.completion_tokens} | finish: {resp.choices[0].finish_reason}")
+            return texto
         except Exception as e:
             logger.warning(f"⚠️  OpenAI falló: {e} → Gemini...")
 
     if gemini_model:
         try:
-            resp = gemini_model.models.generate_content(
-                model    = settings.llm.modelo_fallback,
-                contents = prompt,
-                config   = {
-                    "temperature":       model_params["temperature"],
-                    "max_output_tokens": model_params["max_tokens"],
-                },
-            )
-            return resp.text.strip()
+            def _gemini():
+                return gemini_model.models.generate_content(
+                    model    = settings.llm.modelo_fallback,
+                    contents = prompt,
+                    config   = {
+                        "temperature":       model_params["temperature"],
+                        "max_output_tokens": model_params["max_tokens"],
+                        **({"top_p": model_params["top_p"]} if model_params.get("top_p") else {}),
+                    },
+                )
+            logger.info(f"🔍 Gemini config → max_output_tokens: {model_params['max_tokens']} | temperature: {model_params['temperature']}")
+            resp  = await loop.run_in_executor(None, _gemini)
+            texto = resp.text.strip()
+            finish = getattr(resp.candidates[0], "finish_reason", "?") if resp.candidates else "?"
+            logger.info(f"✅ Gemini | chars: {len(texto)} | finish: {finish}")
+            return texto
         except Exception as e2:
             logger.error(f"❌ Gemini también falló: {e2}")
 
@@ -295,7 +347,7 @@ def _formatear_chunk(chunk: Dict) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CLASIFICACIÓN DE CONSULTAS
+# CLASIFICACIÓN DE TAREAS
 # ══════════════════════════════════════════════════════════════════════
 
 # ══════════════════════════════════════════════════════════════════════
@@ -343,15 +395,15 @@ def _formatear_respuesta_recomendaciones(recs: List[Dict]) -> str:
         cal      = r.get("CALIFICACION_PROM", 0)
         text_cal = f"⭐ {cal:.1f}/5.0" if cal > 0 else ""
         texto   += f"**{i}. {r.get('CURSO', 'Curso')}**\n"
-        texto   += f"   🎯 {r.get('justificacion', 'Relevante para tu perfil')}\n"
-        texto   += f"   ⏱️ {r.get('HORAS_PROGRAMA', 0)}h  |  "
+        texto   += f" 🎯 {r.get('justificacion', 'Relevante para tu perfil')}\n"
+        texto   += f" ⏱️ {r.get('HORAS_PROGRAMA', 0)}h  |  "
         texto   += f"✅ {r.get('TASA_CULMINACION', 0) * 100:.0f}% culminación"
         if text_cal:
             texto += f"  |  {text_cal}"
         texto += "\n"
         if r.get("PUBLICO_OBJETIVO"):
-            texto += f"   👥 Dirigido a: {r['PUBLICO_OBJETIVO']}\n"
-        texto += f"   📊 Score: {r.get('score_final', 0):.2f}\n\n"
+            texto += f" 👥 Dirigido a: {r['PUBLICO_OBJETIVO']}\n"
+        texto += f" 📊 Score: {r.get('score_final', 0):.2f}\n\n"
 
     texto += "💡 Inscríbete directamente desde tu panel de cursos en SIFODS."
     return texto
@@ -598,6 +650,41 @@ async def startup_event():
         f"Gemini: {'✅' if gemini_model else '⚠️  no configurado'} | "
         f"top_k default: {settings.recomendacion.top_k}"
     )
+    asyncio.create_task(_auto_refrescar_recomendador())
+
+
+async def _auto_refrescar_recomendador() -> None:
+    """
+    Tarea background que recarga el recomendador automáticamente cada
+    CACHE_TTL_SEGUNDOS (configurable en .env, default 3600 = 1 hora).
+
+    Flujo seguro:
+      1. Espera el TTL sin bloquear requests
+      2. Construye el nuevo modelo en RAM (proceso pesado en thread pool)
+      3. Solo hace swap atómico si la carga fue exitosa
+      4. Los requests en curso usan el modelo viejo hasta el swap
+    """
+    ttl = settings.servidor.cache_ttl_segundos
+    logger.info(f"⏰ Auto-refresco del recomendador cada {ttl}s ({ttl//3600}h {(ttl%3600)//60}m)")
+
+    while True:
+        await asyncio.sleep(ttl)
+        logger.info("🔄 Auto-refresco: recargando datos desde PostgreSQL...")
+        try:
+            loop    = asyncio.get_event_loop()
+            nuevo   = await loop.run_in_executor(None, inicializar_recomendador)
+            if nuevo:
+                global recomendador
+                recomendador = nuevo         
+                logger.info(
+                    f"✅ Auto-refresco completado | "
+                    f"Registros: {len(nuevo.df_raw):,} | "
+                    f"Próximo refresco en {ttl}s"
+                )
+            else:
+                logger.warning("⚠️  Auto-refresco falló — se mantiene el modelo anterior")
+        except Exception as e:
+            logger.error(f"❌ Error en auto-refresco: {e} — se mantiene el modelo anterior")
 
 
 @app.on_event("shutdown")
@@ -610,7 +697,7 @@ async def shutdown_event():
 # ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/agente_tecnologico", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(
         "agente_tecnologico.html",
@@ -631,18 +718,14 @@ async def health_check():
 
 
 @app.post("/api/sifods")
-async def consulta_sifods(
-    mensaje:        str,
-    usuario:        str,
-    nombre_usuario: Optional[str] = None,
-):
+async def consulta_sifods(request:SifodsRequest):
     """
     Módulo RAG — responde preguntas sobre la plataforma SIFODS.
     Busca contexto en Qdrant y genera respuesta con el LLM.
     """
     try:
-        resultado = await procesar_consulta_sifods(mensaje, usuario)
-        guardar_conversacion_sifods(usuario, nombre_usuario, mensaje, resultado)
+        resultado = await procesar_consulta_sifods(request.mensaje, request.usuario)
+        guardar_conversacion_sifods(request.usuario, request.nombre_usuario, request.mensaje, resultado)
         return {
             "respuesta":    resultado["respuesta"],
             "fuente_datos": resultado.get("fuente_datos"),
