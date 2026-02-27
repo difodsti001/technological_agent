@@ -357,13 +357,13 @@
             font-size: 14px;
             line-height: 1.6;
             word-wrap: break-word;
-            white-space: pre-wrap;
         }
 
         .msg-user .msg-bubble {
             background: linear-gradient(135deg, var(--primary-dim), var(--primary));
             color: white;
             border-radius: 18px 18px 4px 18px;
+            white-space: pre-wrap;
         }
 
         .msg-bot .msg-bubble {
@@ -372,6 +372,35 @@
             border: 1px solid var(--border);
             border-radius: 18px 18px 18px 4px;
         }
+
+        /* Estilos markdown dentro del chat */
+        .msg-markdown p          { margin: 0 0 8px; }
+        .msg-markdown p:last-child { margin-bottom: 0; }
+        .msg-markdown strong     { font-weight: 700; color: var(--txt-main); }
+        .msg-markdown em         { font-style: italic; }
+        .msg-markdown h1,.msg-markdown h2,.msg-markdown h3 {
+            font-size: 14px; font-weight: 700; margin: 10px 0 4px;
+            color: var(--txt-main);
+        }
+        .msg-markdown ul,.msg-markdown ol {
+            margin: 6px 0 8px 18px; padding: 0;
+        }
+        .msg-markdown li         { margin-bottom: 4px; }
+        .msg-markdown code       {
+            background: rgba(255,255,255,.08); padding: 1px 5px;
+            border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px;
+        }
+        .msg-markdown pre        {
+            background: rgba(0,0,0,.25); padding: 10px 12px;
+            border-radius: 8px; overflow-x: auto; margin: 8px 0;
+        }
+        .msg-markdown pre code   { background: none; padding: 0; }
+        .msg-markdown hr         { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+        .chat-link {
+            color: #7eb8f7; text-decoration: underline;
+            text-underline-offset: 2px; word-break: break-all;
+        }
+        .chat-link:hover         { color: #a8d0ff; }
 
         .msg-time {
             font-size: 10px;
@@ -947,6 +976,20 @@
             .courses-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <!-- Markdown renderer para el chat SIFODS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script>
+        // Configurar marked: links abren en nueva pestaña, sanitizado básico
+        marked.setOptions({
+            breaks: true,       // saltos de línea simples → <br>
+            gfm:    true,       // GitHub Flavored Markdown (tablas, listas, etc.)
+        });
+        // Hacer que todos los links abran en nueva pestaña de forma segura
+        const _renderer = new marked.Renderer();
+        _renderer.link = (href, title, text) =>
+            `<a href="${href}" target="_blank" rel="noopener noreferrer" class="chat-link">${text}</a>`;
+        marked.setOptions({ renderer: _renderer });
+    </script>
 </head>
 <body>
 <div class="container">
@@ -1023,9 +1066,8 @@
             <div class="suggestions-bar">
                 <span class="suggestions-label">💡 Sugerencias</span>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Cómo accedo al Centro de Recursos?')">Centro de Recursos</button>
-                <button class="suggestion-chip" onclick="usarSugerencia('No puedo iniciar sesión, ¿qué hago?')">Problemas de acceso</button>
+                <button class="suggestion-chip" onclick="usarSugerencia('No puedo iniciar sesión en la plataforma Sifods, ¿qué hago?')">Problemas de acceso</button>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Dónde están los videos de YouTube?')">Videos YouTube</button>
-                <button class="suggestion-chip" onclick="usarSugerencia('¿Qué es la Zona FID?')">Zona FID</button>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Cómo descargo un recurso del Centro de Recursos?')">Descargar recursos</button>
             </div>
 
@@ -1319,7 +1361,7 @@ function iniciarChatSifods() {
     agregarMensajeBot(
         '👋 ¡Hola! Soy tu asistente para navegar <strong>SIFODS</strong>.\n' +
         'Puedo ayudarte con el Centro de Recursos, acceso a la plataforma, ' +
-        'videos de YouTube, la Zona FID y mucho más.\n\n¿En qué te puedo ayudar hoy?'
+        'videos de YouTube y mucho más.\n\n¿En qué te puedo ayudar hoy?'
     );
 }
 
@@ -1335,12 +1377,13 @@ function agregarMensajeUsuario(texto) {
     chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-function agregarMensajeBot(html) {
+function agregarMensajeBot(texto) {
     const chatbox = document.getElementById('chatbox');
     const div = document.createElement('div');
     div.className = 'message msg-bot';
+    const rendered = typeof marked !== 'undefined' ? marked.parse(texto) : texto;
     div.innerHTML = `
-        <div class="msg-bubble">${html}</div>
+        <div class="msg-bubble msg-markdown">${rendered}</div>
         <div class="msg-time">${horaActual()}</div>
     `;
     chatbox.appendChild(div);

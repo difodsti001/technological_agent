@@ -294,15 +294,18 @@ async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
 
     if gemini_model:
         try:
+            from google.genai import types as genai_types
+
             def _gemini():
+                cfg = genai_types.GenerateContentConfig(
+                    temperature       = model_params["temperature"],
+                    max_output_tokens = model_params["max_tokens"],
+                    top_p             = model_params.get("top_p") or None,
+                )
                 return gemini_model.models.generate_content(
                     model    = settings.llm.modelo_fallback,
                     contents = prompt,
-                    config   = {
-                        "temperature":       model_params["temperature"],
-                        "max_output_tokens": model_params["max_tokens"],
-                        **({"top_p": model_params["top_p"]} if model_params.get("top_p") else {}),
-                    },
+                    config   = cfg,
                 )
             logger.info(f"🔍 Gemini config → max_output_tokens: {model_params['max_tokens']} | temperature: {model_params['temperature']}")
             resp  = await loop.run_in_executor(None, _gemini)
@@ -314,6 +317,7 @@ async def llamar_llm_con_fallback(prompt: str, model_params: dict) -> str:
             logger.error(f"❌ Gemini también falló: {e2}")
 
     raise HTTPException(status_code=503, detail="LLM no disponible temporalmente")
+
 
 
 # ══════════════════════════════════════════════════════════════════════
