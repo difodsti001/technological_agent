@@ -37,6 +37,7 @@ from config.prompts import (
     PROMPT_SIFODS,
     MENSAJES_AYUDA,
 )
+from navegacion_router import NavegacionRouter
 
 from sistema_recomendacion import HybridRecommender, crear_recomendador
 
@@ -110,6 +111,7 @@ embedding_model = SentenceTransformer(settings.llm.embedding_model)
 tokenizer       = tiktoken.encoding_for_model("gpt-4o-mini")
 
 recomendador: Optional[HybridRecommender] = None
+nav_router:   Optional[NavegacionRouter]  = None
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -359,8 +361,19 @@ def _formatear_chunk(chunk: Dict) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
-    ts     = datetime.now(LIMA_TZ)
-    chunks = search_qdrant(mensaje)
+    ts = datetime.now(LIMA_TZ)
+
+    # Routing híbrido: selecciona la colección correcta antes de buscar
+    if nav_router:
+        routing = nav_router.route(mensaje)
+        chunks  = nav_router.search(mensaje)
+        nodo_info = f"{routing['node']} ({routing['kb']})"
+        fuente    = f"qdrant:{routing['kb']}"
+    else:
+        # fallback: comportamiento anterior si el router no está disponible
+        chunks    = search_qdrant(mensaje)
+        nodo_info = "general"
+        fuente    = "qdrant"
 
     if not chunks:
         return {
@@ -378,7 +391,8 @@ async def procesar_consulta_sifods(mensaje: str, usuario: str) -> Dict:
     return {
         "respuesta":      respuesta,
         "tarea":          "sifods",
-        "fuente_datos":   "qdrant",
+        "fuente_datos":   fuente,
+        "nodo_navegacion": nodo_info,                 # ← nuevo campo de trazabilidad
         "referencias":    [{"fuente": c["filename"], "relevancia": c["score"]} for c in chunks[:3]],
         "tokens_entrada": len(tokenizer.encode(prompt)),
         "tokens_salida":  len(tokenizer.encode(respuesta)),
@@ -643,14 +657,28 @@ def verificar_schema() -> bool:
         
 @app.on_event("startup")
 async def startup_event():
-    global recomendador
+    global recomendador, nav_router
     inicializar_pool()
     logger.info("🔄 Inicializando recomendador...")
     recomendador = inicializar_recomendador()
+
+    logger.info("🔄 Inicializando router de navegación...")  # ← bloque nuevo
+    try:
+        nav_router = NavegacionRouter(
+            qdrant_client=qdrant_client,
+            settings=settings,
+            gemini_client=gemini_model,  # usa el mismo gemini_model de main.py
+        )
+        logger.info("✅ Router de navegación activo")
+    except Exception as e:
+        logger.error(f"❌ Router de navegación no disponible: {e}")
+        nav_router = None
+
     logger.info(
         f"🚀 {settings.agente.nombre} v{settings.agente.version} | "
         f"Puerto: {settings.servidor.port} | "
         f"Recomendador: {'✅ activo' if recomendador else '⚠️  no disponible'} | "
+        f"NavRouter: {'✅ activo' if nav_router else '⚠️  no disponible'} | "  # ← nuevo
         f"Gemini: {'✅' if gemini_model else '⚠️  no configurado'} | "
         f"top_k default: {settings.recomendacion.top_k}"
     )
@@ -704,8 +732,18 @@ async def shutdown_event():
 @app.get("/agente_tecnologico", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(
-        "agente_tecnologico.html",
-        {"request": request, "agente": settings.agente.__dict__},
+        name="agente_tecnologico.html",
+        request=request,
+        context={
+            "request": request,
+            "agente": {
+                "nombre": settings.agente.nombre,
+                "version": settings.agente.version,
+                "descripcion": settings.agente.descripcion,
+                "emoji": settings.agente.emoji,
+                "id_agente": settings.agente.id_agente,
+            }
+        },
     )
 
 

@@ -1,0 +1,360 @@
+{
+  "name": "Agente Tecnologico",
+  "description": "Asistente digital que ayuda a los docentes a navegar la plataforma SIFODS.",
+  "keywords": ["agente", "asistente", "ayuda", "soporte", "sifods", "plataforma"],
+  "children": [
+    {
+      "name": "Navegabilidad del Sistema",
+      "description": "Ayuda para encontrar secciones, recursos o funcionalidades dentro de la plataforma SIFODS.",
+      "keywords": ["navegar", "donde encuentro", "como acceder", "buscar sección", "ubicación", "cómo llego"],
+      "children": [
+
+        {
+          "name": "Aula Virtual",
+          "description": "Espacio donde el docente ingresa a sus cursos activos y navega dentro del aula virtual. Incluye cómo está estructurado el aula, cómo acceder a las actividades, foros, evaluaciones, materiales del curso y cómo interactuar con el contenido formativo.",
+          "keywords": [
+            "aula virtual", "ingresar al curso", "entrar al aula", "estructura del aula",
+            "contenido del curso", "actividades del curso", "foros", "tareas",
+            "evaluaciones", "material del aula", "mi aula", "curso activo",
+            "cómo funciona el aula", "navegar en el aula", "secciones del curso"
+          ],
+          "hypothetical_questions": [
+            "¿Cómo está organizado el aula virtual?",
+            "¿Dónde están los materiales de mi curso?",
+            "¿Cómo accedo a los foros del curso?",
+            "¿Dónde veo mis evaluaciones pendientes?",
+            "No encuentro el contenido de mi aula virtual"
+          ],
+          "knowledge_base": "kb_aula_virtual",
+          "children": []
+        },
+
+        {
+          "name": "Docente al Día",
+          "description": "Sección principal de formación y actualización docente de SIFODS. Hub central de contenido formativo que agrupa videos, webinars pedagógicos, webinars socioemocionales, webinars regionales y publicaciones en redes sociales.",
+          "keywords": [
+            "docente al día", "formación docente", "actualización docente",
+            "contenido formativo", "capacitación docente", "sifods formación"
+          ],
+          "children": [
+            {
+              "name": "Videos",
+              "description": "Biblioteca de videos formativos y de capacitación para docentes dentro de la sección Docente al Día. Incluye grabaciones de sesiones, tutoriales y contenido audiovisual de formación disponibles en la plataforma SIFODS.",
+              "keywords": [
+                "videos", "ver video", "biblioteca de videos", "video formativo",
+                "grabación de sesión", "video de capacitación", "videoteca",
+                "contenido en video", "ver grabación", "videos docentes"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde puedo ver los videos formativos de SIFODS?",
+                "¿Hay videos de capacitación disponibles en la plataforma?",
+                "¿Dónde encuentro las grabaciones de sesiones?",
+                "¿Cómo accedo a la biblioteca de videos?",
+                "Quiero ver un video de formación docente",
+                "¿Dónde están los tutoriales en video de SIFODS?"
+              ],
+              "knowledge_base": "kb_docente_videos",
+              "children": []
+            },
+            {
+              "name": "Webinar Pedagógico",
+              "description": "Webinars y sesiones en línea sobre estrategias pedagógicas, metodologías de enseñanza y didáctica para docentes. Dirigidos a mejorar la práctica docente en el aula. Forman parte de la sección Docente al Día.",
+              "keywords": [
+                "webinar pedagógico", "webinar pedagogía", "metodología de enseñanza",
+                "estrategia pedagógica", "didáctica", "práctica docente",
+                "sesión pedagógica", "webinar de enseñanza", "formación pedagógica",
+                "sesión en línea pedagogía"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los webinars de pedagogía?",
+                "¿Cómo accedo a los webinars sobre metodología de enseñanza?",
+                "¿Hay sesiones sobre estrategias pedagógicas?",
+                "Quiero ver un webinar pedagógico",
+                "¿Dónde encuentro capacitaciones sobre didáctica?"
+              ],
+              "knowledge_base": "kb_webinar_pedagogico",
+              "children": []
+            },
+            {
+              "name": "Webinar Socioemocional",
+              "description": "Webinars y sesiones sobre desarrollo socioemocional, bienestar docente, salud mental y habilidades blandas. Orientados al cuidado personal y emocional del docente. Forman parte de la sección Docente al Día.",
+              "keywords": [
+                "webinar socioemocional", "socioemocional", "bienestar docente",
+                "salud mental docente", "habilidades blandas", "webinar de bienestar",
+                "desarrollo emocional", "cuidado docente", "gestión emocional",
+                "sesión socioemocional"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los webinars socioemocionales?",
+                "¿Hay contenido sobre bienestar docente?",
+                "¿Dónde encuentro sesiones sobre salud mental para docentes?",
+                "Quiero acceder a webinars de habilidades blandas",
+                "¿Hay recursos sobre gestión emocional para docentes?"
+              ],
+              "knowledge_base": "kb_webinar_socioemocional",
+              "children": []
+            },
+            {
+              "name": "Publicaciones en Redes",
+              "description": "Contenido publicado en las redes sociales oficiales de SIFODS: Facebook, Instagram, LinkedIn y otras. Incluye posts, transmisiones en vivo, reels y contenido compartido externamente por la plataforma.",
+              "keywords": [
+                "publicaciones en redes", "redes sociales", "facebook", "instagram",
+                "linkedin", "post", "publicación oficial", "transmisión en vivo", "live",
+                "reel", "contenido en facebook", "webinar en facebook",
+                "video en redes", "publicación sifods"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde veo el contenido publicado en Facebook de SIFODS?",
+                "¿Hay transmisiones en vivo disponibles?",
+                "¿Dónde encuentro las publicaciones de Instagram de la plataforma?",
+                "Vi un webinar en Facebook de SIFODS, ¿cómo lo encuentro?",
+                "¿Dónde están los posts oficiales de las redes sociales?",
+                "¿Hay reels o videos cortos publicados por SIFODS?"
+              ],
+              "knowledge_base": "kb_publicaciones_redes",
+              "children": []
+            },
+            {
+              "name": "Webinar Regional",
+              "description": "Webinars y eventos organizados por región, DRE, UGEL o sede geográfica del Perú. Son sesiones adaptadas al contexto local de cada grupo de docentes: Ancash, Puno, Cusco, Lima, Arequipa y otras regiones.",
+              "keywords": [
+                "webinar regional", "webinar por región", "evento regional",
+                "DRE", "UGEL", "sede", "zona", "región", "webinar local",
+                "capacitación regional", "sesión regional", "webinar por sede",
+                "ancash", "puno", "cusco", "lima", "arequipa", "junín", "piura",
+                "la libertad", "lambayeque", "ica", "moquegua", "tacna"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los webinars de mi región?",
+                "¿Cómo accedo a los eventos de mi DRE o UGEL?",
+                "¿Hay webinars organizados por zona geográfica?",
+                "Quiero ver el webinar regional al que asistí",
+                "¿Dónde están las sesiones de capacitación de Ancash?",
+                "¿Hay webinars de Puno disponibles?",
+                "¿Dónde veo los webinars de Cusco?"
+              ],
+              "knowledge_base": "kb_webinar_regional",
+              "children": []
+            }
+          ]
+        },
+
+        {
+          "name": "Centro de Recursos",
+          "description": "Espacio en donde el docente puede encontrar materiales bibliográficos, recursos y herramientas para fortalecer su práctica pedagógica y desarrollar sus competencias profesionales. Repositorio central de SIFODS.",
+          "keywords": [
+            "centro de recursos", "recursos pedagógicos", "materiales bibliográficos",
+            "fortalecer práctica", "competencias profesionales", "repositorio sifods"
+          ],
+          "children": [
+            {
+              "name": "Recursos de Acciones Formativas",
+              "description": "Recursos de la oferta abierta y masiva elaborados e implementados para ofrecer a todos los docentes la oportunidad de acceder a una formación docente en servicio, pertinente y de calidad, de manera versátil, flexible y promoviendo la autoformación.",
+              "keywords": [
+                "acciones formativas", "recursos formativos", "oferta abierta",
+                "oferta masiva", "formación en servicio", "autoformación",
+                "recursos de formación", "materiales de acción formativa",
+                "formación docente en servicio", "oferta formativa"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los recursos de las acciones formativas?",
+                "¿Cómo accedo a los materiales de la oferta formativa?",
+                "¿Dónde encuentro recursos de formación docente en servicio?",
+                "¿Hay recursos de autoformación disponibles?",
+                "¿Dónde están los materiales de la oferta abierta y masiva?",
+                "¿Cómo descargo los recursos de mi acción formativa?"
+              ],
+              "knowledge_base": "kb_recursos_acciones_formativas",
+              "children": []
+            },
+            {
+              "name": "Herramientas de Apoyo Docente",
+              "description": "Recursos y herramientas que responden a los distintos contextos educativos para contribuir al fortalecimiento de la formación profesional del docente. Incluye instrumentos pedagógicos, plantillas, rúbricas y herramientas digitales para el aula.",
+              "keywords": [
+                "herramientas de apoyo", "herramientas docentes", "apoyo docente",
+                "herramienta digital", "instrumento pedagógico", "plantillas",
+                "rúbricas", "contextos educativos", "fortalecimiento profesional",
+                "herramientas para el aula", "recursos de apoyo"
+              ],
+              "hypothetical_questions": [
+                "¿Qué herramientas de apoyo hay para docentes?",
+                "¿Dónde encuentro instrumentos pedagógicos?",
+                "¿Hay plantillas y rúbricas disponibles para docentes?",
+                "¿Qué herramientas digitales ofrece SIFODS para el aula?",
+                "¿Dónde están los recursos para fortalecer mi práctica profesional?"
+              ],
+              "knowledge_base": "kb_herramientas_apoyo_docente",
+              "children": []
+            },
+            {
+              "name": "Materiales Educativos",
+              "description": "Materiales educativos de los estudiantes que como docente son útiles en el quehacer educativo diario. Incluye guías, fichas de trabajo, lecturas, infografías y recursos didácticos para usar con los alumnos en el aula.",
+              "keywords": [
+                "materiales educativos", "material didáctico", "materiales para estudiantes",
+                "quehacer educativo", "recurso para el aula", "guías didácticas",
+                "fichas de trabajo", "lecturas", "infografías educativas",
+                "material para mis alumnos", "recursos para estudiantes"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde encuentro materiales educativos para mis alumnos?",
+                "¿Hay guías didácticas para usar en el aula?",
+                "¿Dónde están las fichas de trabajo para estudiantes?",
+                "Necesito materiales educativos para mi clase",
+                "¿Hay infografías o lecturas para trabajar con mis alumnos?",
+                "¿Dónde están los recursos para mi quehacer educativo diario?"
+              ],
+              "knowledge_base": "kb_materiales_educativos",
+              "children": []
+            },
+            {
+              "name": "Portales de Interés",
+              "description": "Acceso a diferentes espacios virtuales del Minedu y otros aliados con información relevante sobre educación. Directorio de portales externos recomendados para la comunidad docente.",
+              "keywords": [
+                "portales de interés", "minedu", "aliados educativos",
+                "espacios virtuales", "sitios de educación", "portales externos",
+                "enlaces minedu", "páginas de educación", "sitios aliados",
+                "recursos externos minedu", "portales educativos"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los portales del Minedu y sus aliados?",
+                "¿Hay enlaces a espacios virtuales educativos del Minedu?",
+                "¿Qué portales externos recomienda SIFODS?",
+                "¿Dónde encuentro sitios aliados con información educativa?",
+                "¿Hay links a otros portales del Ministerio de Educación?"
+              ],
+              "knowledge_base": "kb_portales_interes",
+              "children": []
+            },
+            {
+              "name": "Marcos Normativos",
+              "description": "Marcos normativos actualizados en su última edición relevantes para el ejercicio docente. Incluye leyes de educación, resoluciones ministeriales, decretos, reglamentos y disposiciones del Minedu.",
+              "keywords": [
+                "marcos normativos", "normativa", "normativa actualizada",
+                "ley de educación", "resolución ministerial", "decreto",
+                "reglamento docente", "disposición minedu", "marco legal",
+                "regulación educativa", "norma vigente", "última edición normativa"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están los marcos normativos actualizados?",
+                "¿Cómo accedo a las resoluciones ministeriales vigentes?",
+                "¿Dónde encuentro el reglamento docente actualizado?",
+                "¿Hay decretos educativos disponibles en SIFODS?",
+                "¿Dónde están las normas y disposiciones del Minedu?",
+                "¿Puedo ver los marcos normativos en su última edición?"
+              ],
+              "knowledge_base": "kb_marcos_normativos",
+              "children": []
+            }
+          ]
+        },
+
+        {
+          "name": "Asistencia Virtual",
+          "description": "Sección de soporte y atención al usuario de SIFODS. Incluye los canales de atención disponibles y las respuestas a las preguntas frecuentes sobre trabajo pedagógico y uso de la plataforma.",
+          "keywords": [
+            "asistencia virtual", "soporte sifods", "ayuda", "atención al usuario"
+          ],
+          "children": [
+            {
+              "name": "Canales de Atención",
+              "description": "Información sobre los canales disponibles de SIFODS, cómo ingresar a la plataforma, cómo navegar en un aula virtual, cómo descargar un certificado y cómo cambiar la contraseña. Es el nodo de soporte técnico y guía de acceso para docentes.",
+              "keywords": [
+                "canales de atención", "contacto sifods", "soporte técnico",
+                "hablar con asesor", "chat de soporte", "correo de soporte",
+                "teléfono sifods", "whatsapp sifods", "horario de atención",
+                "comunicarme con alguien", "mesa de ayuda", "helpdesk",
+                "cómo ingresar a sifods", "cómo entrar a la plataforma",
+                "cómo navegar en el aula", "descargar certificado",
+                "cambiar contraseña", "restablecer clave", "olvidé mi contraseña",
+                "no puedo entrar", "iniciar sesión", "login sifods",
+                "número de contacto", "asesor sifods"
+              ],
+              "hypothetical_questions": [
+                "¿Cómo me comunico con un asesor de SIFODS?",
+                "¿Cuál es el correo o teléfono de soporte de SIFODS?",
+                "¿Cómo ingreso a la plataforma SIFODS?",
+                "¿Cómo navego dentro de un aula virtual?",
+                "¿Cómo descargo mi certificado?",
+                "¿Cómo cambio mi contraseña en SIFODS?",
+                "Olvidé mi contraseña, ¿qué hago?",
+                "No puedo iniciar sesión en SIFODS",
+                "¿Cuál es el horario de atención del soporte?",
+                "¿Tienen WhatsApp de atención al docente?",
+                "¿Cómo contacto a la mesa de ayuda de SIFODS?"
+              ],
+              "knowledge_base": "kb_canales_atencion",
+              "children": []
+            },
+            {
+              "name": "Preguntas Frecuentes",
+              "description": "Espacio con respuestas a las preguntas frecuentes sobre el trabajo pedagógico. Cubre temas de: evaluación formativa, planificación curricular, recursos y materiales, bienestar socioemocional docente, consolidación de aprendizajes, trabajo colegiado y cursos virtuales.",
+              "keywords": [
+                "preguntas frecuentes", "faq", "dudas pedagógicas",
+                "evaluación formativa", "planificación curricular",
+                "bienestar socioemocional", "consolidación de aprendizajes",
+                "trabajo colegiado", "cursos virtuales", "dudas sobre cursos",
+                "preguntas sobre pedagogía", "respuestas rápidas", "consultas frecuentes"
+              ],
+              "hypothetical_questions": [
+                "¿Dónde están las preguntas frecuentes de SIFODS?",
+                "¿Hay respuestas sobre evaluación formativa?",
+                "¿Dónde encuentro información sobre planificación curricular?",
+                "¿Hay respuestas sobre bienestar socioemocional docente?",
+                "¿Qué es el trabajo colegiado?",
+                "¿Dónde encuentro respuestas sobre cursos virtuales?",
+                "¿Hay FAQ sobre consolidación de aprendizajes?",
+                "¿Dónde resuelvo mis dudas sobre recursos y materiales?"
+              ],
+              "knowledge_base": "kb_preguntas_frecuentes",
+              "children": []
+            }
+          ]
+        },
+
+        {
+          "name": "Redes y Comunidad",
+          "description": "Espacios de comunidad docente y Comunidades Profesionales de Aprendizaje (CPA) en SIFODS. Redes de colaboración entre pares, intercambio de experiencias y participación colectiva entre docentes.",
+          "keywords": [
+            "redes y comunidad", "comunidad docente", "comunidades profesionales de aprendizaje",
+            "CPA", "red de docentes", "colaboración entre pares",
+            "intercambio de experiencias", "comunidad de práctica",
+            "red colaborativa", "conectar con otros docentes", "grupos docentes"
+          ],
+          "hypothetical_questions": [
+            "¿Qué son las Comunidades Profesionales de Aprendizaje en SIFODS?",
+            "¿Hay comunidades de docentes en la plataforma?",
+            "¿Cómo me uno a una red de docentes?",
+            "¿Dónde puedo conectar con otros profesores?",
+            "¿Hay grupos de colaboración entre docentes?",
+            "¿Dónde está la comunidad de práctica de SIFODS?",
+            "¿Cómo participo en una CPA?"
+          ],
+          "knowledge_base": "kb_redes_comunidad",
+          "children": []
+        },
+
+        {
+          "name": "Canal de YouTube",
+          "description": "Canal oficial de YouTube de SIFODS con videos formativos, webinars grabados, tutoriales y contenido audiovisual publicado externamente. Repositorio de videos del Ministerio de Educación para docentes.",
+          "keywords": [
+            "youtube", "canal youtube", "canal oficial youtube sifods",
+            "videos en youtube", "webinar grabado youtube", "ver en youtube",
+            "link canal youtube", "suscribirse al canal", "grabaciones youtube",
+            "videos minedu youtube", "tutoriales youtube"
+          ],
+          "hypothetical_questions": [
+            "¿Cuál es el canal de YouTube de SIFODS?",
+            "¿Dónde están los videos de SIFODS en YouTube?",
+            "¿Hay webinars grabados en el canal de YouTube?",
+            "¿Cómo accedo al canal oficial de YouTube de SIFODS?",
+            "¿Dónde encuentro el link al canal de YouTube del Minedu?",
+            "¿Hay tutoriales en el canal de YouTube?"
+          ],
+          "knowledge_base": "kb_canal_youtube",
+          "children": []
+        }
+
+      ]
+    }
+  ]
+}
