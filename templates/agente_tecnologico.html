@@ -4,35 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Tecnológico · SIFODS</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     <style>
-        /* ─── VARIABLES ──────────────────────────────────────────────── */
+        /* ── PALETA MINEDU (rojo · gris · blanco) ─────────────────────
+           Rojo institucional: #C8102E
+           Rojo oscuro:        #A00C24
+           Rojo hover:         #E01535
+           Rojo claro bg:      #FDF2F4
+           Rojo borde:         #EDAAB4
+
+           Gris carbón:        #1C1C1E
+           Gris oscuro:        #3A3A3C
+           Gris medio:         #636366
+           Gris suave:         #8E8E93
+           Gris borde:         #D1D1D6
+           Gris claro:         #F2F2F7
+           Gris hielo:         #F8F8FA
+
+           Blanco:             #FFFFFF
+        ───────────────────────────────────────────────────────────── */
         :root {
-            --bg:          #0f1117;
-            --surface:     #1a1d27;
-            --surface2:    #22263a;
-            --border:      #2e3248;
-            --border-soft: #252840;
+            --rojo:         #C8102E;
+            --rojo-oscuro:  #A00C24;
+            --rojo-hover:   #E01535;
+            --rojo-claro:   #FDF2F4;
+            --rojo-borde:   #EDAAB4;
 
-            --primary:     #6c8eff;
-            --primary-dim: #3d5bd9;
-            --accent:      #ff6b9d;
-            --accent2:     #43e8d8;
-            --warn:        #ffc654;
+            --carbon:       #1C1C1E;
+            --gris-dark:    #3A3A3C;
+            --gris-med:     #636366;
+            --gris-soft:    #8E8E93;
+            --gris-borde:   #D1D1D6;
+            --gris-claro:   #F2F2F7;
+            --gris-hielo:   #F8F8FA;
 
-            --txt:         #e8eaf6;
-            --txt-soft:    #8b90b0;
-            --txt-dim:     #555a7a;
+            --white:        #FFFFFF;
+            --bg:           #F0F0F5;
+            --surface:      #FFFFFF;
+            --surface2:     #F8F8FA;
 
-            --radius-sm:   8px;
-            --radius-md:   14px;
-            --radius-lg:   22px;
-            --radius-xl:   30px;
+            --txt:          #1C1C1E;
+            --txt-soft:     #636366;
+            --txt-dim:      #8E8E93;
 
-            --shadow:      0 8px 32px rgba(0,0,0,.45);
-            --shadow-sm:   0 2px 12px rgba(0,0,0,.3);
-            --success:     #43e8a8;
-            --error:       #ff5e7e;
+            --success:      #30C05A;
+            --warn:         #FF9F0A;
+            --error:        #FF3B30;
+
+            --radius-xs:    4px;
+            --radius-sm:    8px;
+            --radius-md:    12px;
+            --radius-lg:    18px;
+            --radius-xl:    24px;
+
+            --shadow-sm:    0 1px 4px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+            --shadow:       0 4px 20px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.05);
+            --shadow-lg:    0 12px 40px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.06);
+            --shadow-rojo:  0 4px 20px rgba(200,16,46,.20);
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -40,199 +69,389 @@
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--bg);
+            background-image:
+                radial-gradient(circle at 100% 0%, rgba(200,16,46,.04) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(200,16,46,.03) 0%, transparent 50%);
             color: var(--txt);
             min-height: 100vh;
-            padding: 28px 20px;
-            /* Subtle grid texture */
-            background-image:
-                linear-gradient(rgba(108,142,255,.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(108,142,255,.04) 1px, transparent 1px);
-            background-size: 40px 40px;
         }
 
-        .container {
-            max-width: 1160px;
-            margin: 0 auto;
-        }
-
-        /* ─── HEADER ─────────────────────────────────────────────────── */
-        .header {
+        /* ── TOPBAR INSTITUCIONAL ──────────────────────────────────── */
+        .topbar {
+            background: var(--rojo-oscuro);
+            padding: 0 40px;
             display: flex;
             align-items: center;
-            gap: 18px;
-            padding: 24px 32px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            margin-bottom: 28px;
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
+            gap: 14px;
+            height: 48px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header::before {
+        .topbar-band {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gris-dark) 0%, var(--carbon) 100%);
+        }
+
+        .topbar-escudo {
+            font-size: 20px;
+            flex-shrink: 0;
+            line-height: 1;
+            color: rgba(255,255,255,.9);
+        }
+
+        .topbar-divider {
+            width: 1px; height: 16px;
+            background: rgba(255,255,255,.15);
+            flex-shrink: 0;
+        }
+
+        .topbar-minedu {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,.9);
+            letter-spacing: .9px;
+            text-transform: uppercase;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .topbar-difods {
+            font-size: 11px;
+            color: rgba(255,255,255,.9);
+            letter-spacing: .2px;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topbar-pill {
+            background: var(--rojo);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 11px;
+            border-radius: 3px;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* ── WRAPPER ────────────────────────────────────────────── */
+        .wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 28px 56px;
+        }
+
+        /* ── HERO HEADER ────────────────────────────────────────── */
+        .hero {
+            background: var(--gris-med);
+            border-radius: var(--radius-lg);
+            padding: 0;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            align-items: stretch;
+            position: relative;
+        }
+
+        .hero::after {
             content: '';
             position: absolute;
-            top: -60px; right: -60px;
-            width: 200px; height: 200px;
-            background: radial-gradient(circle, rgba(108,142,255,.15) 0%, transparent 70%);
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 90% 50%, rgba(200,16,46,.18) 0%, transparent 60%);
+            pointer-events: none;
         }
 
-        .header-badge {
+        .hero-stripe {
+            width: 5px;
+            background: var(--rojo);
+            flex-shrink: 0;
+        }
+
+        .hero-body {
+            flex: 1;
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-logo {
             width: 58px; height: 58px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: var(--gris-soft);
+            border: 1px solid rgba(255,255,255,.12);
             border-radius: var(--radius-md);
             display: flex; align-items: center; justify-content: center;
             font-size: 28px;
             flex-shrink: 0;
-            box-shadow: 0 0 24px rgba(108,142,255,.4);
         }
 
-        .header-text h1 {
-            font-size: 22px;
+        .hero-info h1 {
+            font-size: 21px;
             font-weight: 700;
-            color: var(--txt);
-            letter-spacing: -.3px;
+            color: #FFFFFF;
+            letter-spacing: -.4px;
+            font-family: 'Source Serif 4', serif;
+            line-height: 1.2;
         }
 
-        .header-text p {
+        .hero-info h1 span {
+            color: var(--rojo);
+        }
+
+        .hero-info p {
             font-size: 13px;
-            color: var(--txt-soft);
-            margin-top: 3px;
+            color: rgba(255,255,255,.5);
+            margin-top: 5px;
+            line-height: 1.5;
+            font-weight: 400;
         }
 
-        .header-pill {
+        .hero-badges {
             margin-left: auto;
-            background: rgba(108,142,255,.12);
-            border: 1px solid rgba(108,142,255,.3);
-            color: var(--primary);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: 'DM Mono', monospace;
-            letter-spacing: .5px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
             flex-shrink: 0;
         }
 
-        /* ─── MÓDULOS GRID ───────────────────────────────────────────── */
+        .hero-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            color: rgba(255,255,255,.45);
+        }
+
+        .hero-badge-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 6px rgba(48,192,90,.6);
+            animation: pulse 2.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:.5; transform:scale(.85); }
+        }
+
+        .hero-version {
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.14);
+            color: rgba(255,255,255,.55);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: 'DM Mono', monospace;
+            letter-spacing: .5px;
+        }
+
+        /* ── SECTION LABEL ─────────────────────────────────────── */
+        .section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--txt-dim);
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--gris-borde);
+        }
+
+        /* ── MÓDULOS GRID ──────────────────────────────────────── */
         .modules-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            gap: 14px;
             margin-bottom: 28px;
         }
 
         .module-card {
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--gris-borde);
             border-radius: var(--radius-md);
-            padding: 22px 20px;
+            padding: 22px 20px 18px;
             cursor: pointer;
-            transition: all .25s ease;
+            transition: all .22s ease;
             position: relative;
             overflow: hidden;
         }
 
-        .module-card::after {
+        .module-card::before {
             content: '';
             position: absolute;
-            inset: 0;
-            border-radius: var(--radius-md);
-            opacity: 0;
-            transition: opacity .25s;
+            top: 0; left: 0; right: 0;
+            height: 3px;
         }
+
+        .module-card.sifods::before        { background: var(--gris-med); }
+        .module-card.recomendacion::before { background: var(--rojo); }
+        .module-card.tarea3::before        { background: var(--gris-borde); }
+        .module-card.tarea4::before        { background: var(--gris-borde); }
 
         .module-card:hover:not(.disabled) {
-            transform: translateY(-3px);
+            border-color: var(--gris-med);
             box-shadow: var(--shadow);
-            border-color: var(--primary);
+            transform: translateY(-3px);
         }
 
-        .module-card:hover:not(.disabled)::after { opacity: 1; }
-
-        .module-card.active {
-            border-color: var(--primary);
-            background: linear-gradient(160deg, #1a2040, #1e2550);
-            box-shadow: 0 0 0 1px var(--primary), var(--shadow);
+        .module-card.recomendacion:hover:not(.disabled) {
+            border-color: var(--rojo-borde);
+            box-shadow: var(--shadow), var(--shadow-rojo);
         }
+
+        .module-card.active.sifods {
+            border-color: var(--carbon);
+            background: var(--carbon);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .module-card.active.sifods .module-title,
+        .module-card.active.sifods .module-desc {
+            color: rgba(255,255,255,.9);
+        }
+
+        .module-card.active.sifods .module-desc {
+            color: rgba(255,255,255,.5);
+        }
+
+        .module-card.active.recomendacion {
+            border-color: var(--rojo);
+            background: var(--rojo);
+            box-shadow: var(--shadow-lg), var(--shadow-rojo);
+        }
+
+        .module-card.active.recomendacion .module-title,
+        .module-card.active.recomendacion .module-desc,
+        .module-card.active.recomendacion .module-icon-wrap {
+            color: rgba(255,255,255,.9);
+        }
+
+        .module-card.active.recomendacion .module-desc { color: rgba(255,255,255,.65); }
 
         .module-card.disabled {
-            opacity: .4;
+            opacity: .5;
             cursor: not-allowed;
         }
 
-        /* Accent top bar */
-        .module-card .bar {
-            height: 3px;
-            border-radius: 2px;
-            margin-bottom: 16px;
+        .module-icon-wrap {
+            width: 40px; height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+            background: var(--gris-claro);
         }
 
-        .module-card.sifods .bar        { background: linear-gradient(90deg, var(--primary), #9b8fff); }
-        .module-card.recomendacion .bar { background: linear-gradient(90deg, var(--accent), var(--warn)); }
-        .module-card.tarea3 .bar        { background: linear-gradient(90deg, var(--accent2), #4facfe); }
-        .module-card.tarea4 .bar        { background: linear-gradient(90deg, #43e97b, #38f9d7); }
-
-        .module-icon {
-            font-size: 30px;
-            margin-bottom: 10px;
-            display: block;
-        }
+        .recomendacion .module-icon-wrap { background: var(--rojo-claro); }
+        .module-card.active .module-icon-wrap { background: rgba(255,255,255,.12); }
 
         .module-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--txt);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
+            line-height: 1.3;
         }
 
         .module-desc {
             font-size: 12px;
             color: var(--txt-soft);
-            line-height: 1.5;
+            line-height: 1.55;
         }
 
         .module-status {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 3px 10px;
-            border-radius: 99px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 14px;
+            padding: 4px 10px;
+            border-radius: 3px;
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: .8px;
+            letter-spacing: .7px;
+            text-transform: uppercase;
             font-family: 'DM Mono', monospace;
         }
 
-        .status-active    { background: rgba(108,142,255,.15); color: var(--primary); border: 1px solid rgba(108,142,255,.3); }
-        .status-available { background: rgba(67,232,216,.1);  color: var(--accent2); border: 1px solid rgba(67,232,216,.25); }
-        .status-soon      { background: rgba(139,144,176,.1); color: var(--txt-dim); border: 1px solid var(--border); }
-
-        /* ─── PANEL ÁREA (donde se inyecta el módulo activo) ─────────── */
-        .panel-area {
-            display: none;
+        .status-active    {
+            background: rgba(255,255,255,.15);
+            color: rgba(255,255,255,.9);
+            border: 1px solid rgba(255,255,255,.2);
         }
 
+        .status-available {
+            background: var(--gris-claro);
+            color: var(--txt-soft);
+            border: 1px solid var(--gris-borde);
+        }
+
+        .module-card.active .status-active {
+            background: rgba(255,255,255,.18);
+            color: white;
+            border-color: rgba(255,255,255,.25);
+        }
+
+        .status-soon {
+            background: var(--gris-claro);
+            color: var(--txt-dim);
+            border: 1px solid var(--gris-borde);
+        }
+
+        /* ── PANEL AREA ─────────────────────────────────────────── */
+        .panel-area { display: none; }
         .panel-area.visible {
             display: block;
-            animation: slideUp .3s ease;
+            animation: slideUp .28s ease;
         }
 
         @keyframes slideUp {
-            from { opacity:0; transform:translateY(16px); }
+            from { opacity:0; transform:translateY(14px); }
             to   { opacity:1; transform:translateY(0); }
         }
 
-        /* ─── PANEL HEADER (común a ambos módulos) ───────────────────── */
+        /* ── PANEL ──────────────────────────────────────────────── */
+        #panel-sifods,
+        #panel-recomendacion {
+            background: var(--surface);
+            border: 1px solid var(--gris-borde);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        /* ── PANEL HEADER ───────────────────────────────────────── */
         .panel-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 18px 24px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-            border-bottom: none;
+            padding: 16px 24px;
+            background: var(--carbon);
+            border-bottom: 1px solid rgba(255,255,255,.06);
         }
 
         .panel-header-left {
@@ -242,87 +461,82 @@
         }
 
         .panel-header-icon {
-            width: 38px; height: 38px;
-            border-radius: var(--radius-sm);
+            width: 36px; height: 36px;
+            border-radius: var(--radius-xs);
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.1);
         }
 
-        .icon-sifods        { background: linear-gradient(135deg, var(--primary), #9b8fff); }
-        .icon-recomendacion { background: linear-gradient(135deg, var(--accent), var(--warn)); }
-
         .panel-header h2 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            color: var(--txt);
+            color: #FFFFFF;
+            font-family: 'Source Serif 4', serif;
         }
 
         .panel-header p {
-            font-size: 12px;
-            color: var(--txt-soft);
+            font-size: 11px;
+            color: rgba(255,255,255,.4);
             margin-top: 1px;
         }
 
         .btn-close {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--txt-soft);
-            padding: 8px 16px;
+            background: rgba(255,255,255,.07);
+            border: 1px solid rgba(255,255,255,.12);
+            color: rgba(255,255,255,.6);
+            padding: 7px 16px;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             font-family: 'DM Sans', sans-serif;
-            transition: all .2s;
+            font-weight: 500;
+            transition: all .15s;
         }
 
-        .btn-close:hover { background: var(--border); color: var(--txt); }
-
-        /* ════════════════════════════════════════════════════════════════
-           MÓDULO 1 — CHAT SIFODS
-        ════════════════════════════════════════════════════════════════ */
-        #panel-sifods {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow);
+        .btn-close:hover {
+            background: rgba(255,255,255,.12);
+            color: white;
         }
 
-        /* Quick suggestions */
+        /* Suggestions bar */
         .suggestions-bar {
-            padding: 12px 24px 14px;
-            background: var(--surface2);
-            border-bottom: 1px solid var(--border);
+            padding: 10px 20px 12px;
+            background: var(--gris-hielo);
+            border-bottom: 1px solid var(--gris-borde);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .suggestions-label {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--txt-dim);
-            font-weight: 600;
-            letter-spacing: .5px;
+            font-weight: 700;
+            letter-spacing: .8px;
             text-transform: uppercase;
             flex-shrink: 0;
+            font-family: 'DM Mono', monospace;
         }
 
         .suggestion-chip {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: white;
+            border: 1px solid var(--gris-borde);
             color: var(--txt-soft);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 12px;
+            padding: 5px 13px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all .2s;
+            transition: all .15s;
             font-family: 'DM Sans', sans-serif;
         }
 
         .suggestion-chip:hover {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: var(--carbon);
+            border-color: var(--carbon);
             color: white;
         }
 
@@ -330,20 +544,20 @@
         .chatbox {
             height: 420px;
             overflow-y: auto;
-            padding: 24px;
-            background: var(--bg);
+            padding: 22px 24px;
+            background: var(--gris-hielo);
             scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
+            scrollbar-color: var(--gris-borde) transparent;
         }
 
         .chatbox::-webkit-scrollbar { width: 4px; }
-        .chatbox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .chatbox::-webkit-scrollbar-thumb { background: var(--gris-borde); border-radius: 4px; }
 
         /* Messages */
-        .message { margin-bottom: 16px; animation: fadeMsg .3s ease; }
+        .message { margin-bottom: 14px; animation: fadeMsg .22s ease; }
 
         @keyframes fadeMsg {
-            from { opacity:0; transform:translateY(8px); }
+            from { opacity:0; transform:translateY(6px); }
             to   { opacity:1; transform:translateY(0); }
         }
 
@@ -351,56 +565,51 @@
         .msg-bot  { display: flex; flex-direction: column; align-items: flex-start; }
 
         .msg-bubble {
-            max-width: 68%;
-            padding: 12px 16px;
-            border-radius: 18px;
+            max-width: 72%;
+            padding: 11px 16px;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.65;
             word-wrap: break-word;
         }
 
         .msg-user .msg-bubble {
-            background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+            background: var(--carbon);
             color: white;
-            border-radius: 18px 18px 4px 18px;
-            white-space: pre-wrap;
+            border-radius: 14px 14px 3px 14px;
         }
 
         .msg-bot .msg-bubble {
-            background: var(--surface2);
+            background: var(--surface);
             color: var(--txt);
-            border: 1px solid var(--border);
-            border-radius: 18px 18px 18px 4px;
+            border: 1px solid var(--gris-borde);
+            border-radius: 14px 14px 14px 3px;
+            box-shadow: var(--shadow-sm);
         }
 
-        /* Estilos markdown dentro del chat */
+        /* Markdown */
         .msg-markdown p          { margin: 0 0 8px; }
         .msg-markdown p:last-child { margin-bottom: 0; }
-        .msg-markdown strong     { font-weight: 700; color: var(--txt-main); }
+        .msg-markdown strong     { font-weight: 600; color: var(--rojo); }
         .msg-markdown em         { font-style: italic; }
         .msg-markdown h1,.msg-markdown h2,.msg-markdown h3 {
             font-size: 14px; font-weight: 700; margin: 10px 0 4px;
-            color: var(--txt-main);
+            color: var(--carbon); font-family: 'Source Serif 4', serif;
         }
-        .msg-markdown ul,.msg-markdown ol {
-            margin: 6px 0 8px 18px; padding: 0;
-        }
+        .msg-markdown ul,.msg-markdown ol { margin: 6px 0 8px 18px; padding: 0; }
         .msg-markdown li         { margin-bottom: 4px; }
         .msg-markdown code       {
-            background: rgba(255,255,255,.08); padding: 1px 5px;
+            background: var(--gris-claro); padding: 1px 6px;
             border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px;
+            color: var(--rojo-oscuro);
         }
         .msg-markdown pre        {
-            background: rgba(0,0,0,.25); padding: 10px 12px;
+            background: var(--carbon); padding: 12px 14px;
             border-radius: 8px; overflow-x: auto; margin: 8px 0;
         }
-        .msg-markdown pre code   { background: none; padding: 0; }
-        .msg-markdown hr         { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-        .chat-link {
-            color: #7eb8f7; text-decoration: underline;
-            text-underline-offset: 2px; word-break: break-all;
-        }
-        .chat-link:hover         { color: #a8d0ff; }
+        .msg-markdown pre code   { background: none; padding: 0; color: rgba(255,255,255,.85); }
+        .msg-markdown hr         { border: none; border-top: 1px solid var(--gris-borde); margin: 10px 0; }
+        .chat-link { color: var(--rojo); text-decoration: underline; text-underline-offset: 2px; }
+        .chat-link:hover { color: var(--rojo-oscuro); }
 
         .msg-time {
             font-size: 10px;
@@ -409,13 +618,13 @@
             font-family: 'DM Mono', monospace;
         }
 
-        /* Typing indicator */
+        /* Typing */
         .typing-row {
             display: none;
             align-items: center;
             gap: 10px;
-            padding: 0 24px 12px;
-            background: var(--bg);
+            padding: 0 24px 10px;
+            background: var(--gris-hielo);
         }
 
         .typing-row.active { display: flex; }
@@ -424,14 +633,15 @@
             display: flex;
             gap: 4px;
             padding: 10px 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 18px 18px 18px 4px;
+            background: var(--surface);
+            border: 1px solid var(--gris-borde);
+            border-radius: 14px 14px 14px 3px;
+            box-shadow: var(--shadow-sm);
         }
 
         .typing-dots span {
-            width: 7px; height: 7px;
-            background: var(--txt-dim);
+            width: 6px; height: 6px;
+            background: var(--gris-borde);
             border-radius: 50%;
             animation: bounce 1.3s infinite;
         }
@@ -441,176 +651,175 @@
 
         @keyframes bounce {
             0%,60%,100% { transform: translateY(0); }
-            30%          { transform: translateY(-8px); }
+            30%          { transform: translateY(-7px); }
         }
 
         /* Input area */
         .chat-input-area {
-            padding: 16px 24px;
+            padding: 14px 20px;
             background: var(--surface);
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--gris-borde);
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         .chat-input {
             flex: 1;
-            background: var(--surface2);
-            border: 1px solid var(--border);
+            background: var(--gris-hielo);
+            border: 1px solid var(--gris-borde);
             color: var(--txt);
-            padding: 12px 18px;
-            border-radius: 99px;
+            padding: 11px 18px;
+            border-radius: var(--radius-sm);
             font-size: 14px;
             font-family: 'DM Sans', sans-serif;
             outline: none;
-            transition: border-color .2s;
+            transition: border-color .15s, box-shadow .15s;
         }
 
         .chat-input::placeholder { color: var(--txt-dim); }
-        .chat-input:focus { border-color: var(--primary); }
+        .chat-input:focus {
+            border-color: var(--carbon);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(28,28,30,.06);
+        }
 
         .btn-send {
-            background: linear-gradient(135deg, var(--primary-dim), var(--primary));
+            background: var(--rojo);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 99px;
+            padding: 11px 22px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             font-family: 'DM Sans', sans-serif;
-            transition: all .2s;
+            transition: all .15s;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-send:hover  { transform: scale(1.04); box-shadow: 0 0 16px rgba(108,142,255,.4); }
-        .btn-send:active { transform: scale(.98); }
+        .btn-send:hover  { background: var(--rojo-oscuro); }
+        .btn-send:active { transform: scale(.97); }
+        .btn-send:disabled { opacity: .4; cursor: not-allowed; }
 
-        /* ════════════════════════════════════════════════════════════════
-           MÓDULO 2 — RECOMENDACIÓN DE CURSOS
-        ════════════════════════════════════════════════════════════════ */
-        #panel-recomendacion {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-        }
-
-        /* Loading state */
+        /* ── PANEL RECOMENDACIÓN ───────────────────────────────── */
         .rec-loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 64px 24px;
-            gap: 16px;
-            background: var(--bg);
+            gap: 14px;
+            background: var(--gris-hielo);
         }
 
         .rec-loading.hidden { display: none; }
 
         .loading-spinner {
-            width: 44px; height: 44px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
+            width: 34px; height: 34px;
+            border: 3px solid var(--gris-borde);
+            border-top-color: var(--rojo);
             border-radius: 50%;
-            animation: spin .8s linear infinite;
+            animation: spin .7s linear infinite;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .loading-text {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--txt-soft);
+            font-weight: 500;
         }
 
-        /* Cards grid */
-        .rec-body {
-            background: var(--bg);
-            padding: 24px;
+        .loading-dni {
+            font-size: 11px;
+            color: var(--txt-dim);
+            font-family: 'DM Mono', monospace;
         }
 
+        .rec-body { background: var(--gris-hielo); padding: 20px 24px; }
         .rec-body.hidden { display: none; }
 
         .rec-meta {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .rec-meta-title {
             font-size: 13px;
             color: var(--txt-soft);
-            font-weight: 500;
+            font-weight: 400;
         }
 
-        .rec-meta-title strong {
-            color: var(--txt);
-        }
+        .rec-meta-title strong { color: var(--txt); font-weight: 600; }
 
         .btn-refresh {
-            background: var(--surface2);
-            border: 1px solid var(--border);
+            background: var(--surface);
+            border: 1px solid var(--gris-borde);
             color: var(--txt-soft);
-            padding: 7px 14px;
+            padding: 7px 13px;
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 12px;
             font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: all .2s;
+            gap: 5px;
+            transition: all .15s;
         }
 
-        .btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-refresh:hover {
+            border-color: var(--carbon);
+            color: var(--carbon);
+        }
 
         .courses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 16px;
+            gap: 14px;
         }
 
-        /* Tarjeta de curso */
+        /* Tarjeta curso */
         .course-card {
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--gris-borde);
             border-radius: var(--radius-md);
             overflow: hidden;
             cursor: pointer;
-            transition: all .25s ease;
-            position: relative;
+            transition: all .2s ease;
         }
 
         .course-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 12px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(255,107,157,.2);
+            transform: translateY(-3px);
+            border-color: var(--rojo-borde);
+            box-shadow: var(--shadow);
         }
 
         .course-card.selected {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(255,107,157,.35);
+            border-color: var(--rojo);
+            box-shadow: 0 0 0 2px var(--rojo-borde), var(--shadow);
         }
 
         .course-card-accent {
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent), var(--warn));
+            height: 3px;
+            background: var(--rojo);
         }
 
-        .course-card-body {
-            padding: 16px;
-        }
+        .course-card-body { padding: 15px; }
 
         .course-rank {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             font-family: 'DM Mono', monospace;
-            color: var(--accent);
-            letter-spacing: 1px;
-            margin-bottom: 8px;
+            color: var(--rojo);
+            letter-spacing: .8px;
+            margin-bottom: 7px;
             text-transform: uppercase;
         }
 
@@ -618,40 +827,30 @@
             font-size: 13px;
             font-weight: 600;
             color: var(--txt);
-            line-height: 1.4;
-            margin-bottom: 12px;
+            line-height: 1.45;
+            margin-bottom: 10px;
         }
 
-        .course-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
+        .course-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 
         .course-tag {
-            background: var(--surface2);
-            border: 1px solid var(--border-soft);
+            background: var(--gris-hielo);
+            border: 1px solid var(--gris-borde);
             color: var(--txt-soft);
-            padding: 3px 9px;
-            border-radius: 99px;
-            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-family: 'DM Mono', monospace;
         }
 
-        .course-stats {
-            display: flex;
-            gap: 12px;
-        }
+        .course-stats { display: flex; gap: 14px; }
 
-        .stat {
-            display: flex;
-            flex-direction: column;
-        }
+        .stat { display: flex; flex-direction: column; }
 
         .stat-val {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
-            color: var(--txt);
+            color: var(--carbon);
             font-family: 'DM Mono', monospace;
         }
 
@@ -662,100 +861,97 @@
         }
 
         .course-card-footer {
-            padding: 10px 16px;
-            background: var(--surface2);
-            border-top: 1px solid var(--border-soft);
+            padding: 9px 15px;
+            background: var(--gris-hielo);
+            border-top: 1px solid var(--gris-borde);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
         }
 
         .score-bar-wrap {
             flex: 1;
-            height: 4px;
-            background: var(--border);
+            height: 3px;
+            background: var(--gris-borde);
             border-radius: 2px;
-            margin-right: 10px;
         }
 
         .score-bar {
             height: 100%;
             border-radius: 2px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
+            background: var(--rojo);
         }
 
         .score-val {
-            font-size: 11px;
+            font-size: 10px;
             font-family: 'DM Mono', monospace;
-            color: var(--txt-soft);
+            color: var(--txt-dim);
             flex-shrink: 0;
         }
 
         .btn-justificacion {
             font-size: 11px;
-            color: var(--accent);
+            color: var(--rojo);
             background: none;
             border: none;
             cursor: pointer;
             font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
             padding: 0;
             text-decoration: underline;
-            text-underline-offset: 3px;
-            margin-left: 10px;
+            text-underline-offset: 2px;
             flex-shrink: 0;
         }
 
-        /* ─── PANEL DE JUSTIFICACIÓN ─────────────────────────────────── */
+        /* Panel justificación */
         .justificacion-panel {
             display: none;
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--gris-borde);
             border-top: none;
-            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-            padding: 24px;
-            animation: slideUp .25s ease;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            padding: 22px 24px;
+            animation: slideUp .22s ease;
         }
 
-        .justificacion-panel.visible {
-            display: block;
-        }
+        .justificacion-panel.visible { display: block; }
 
         .just-header {
             display: flex;
             align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
 
         .just-icon {
-            width: 40px; height: 40px;
-            background: linear-gradient(135deg, var(--accent), var(--warn));
+            width: 36px; height: 36px;
+            background: var(--rojo-claro);
+            border: 1px solid var(--rojo-borde);
             border-radius: var(--radius-sm);
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             flex-shrink: 0;
         }
 
-        .just-course-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--txt);
-        }
+        .just-course-name { font-size: 13px; font-weight: 600; color: var(--txt); font-family: 'Source Serif 4', serif; }
 
         .just-label {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--txt-dim);
             margin-top: 2px;
             font-family: 'DM Mono', monospace;
+            letter-spacing: .5px;
+            text-transform: uppercase;
         }
 
         .just-text {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--accent);
+            background: var(--gris-hielo);
+            border: 1px solid var(--gris-borde);
+            border-left: 3px solid var(--rojo);
             border-radius: var(--radius-sm);
-            padding: 16px 20px;
-            font-size: 14px;
+            padding: 14px 18px;
+            font-size: 13px;
             color: var(--txt);
             line-height: 1.7;
         }
@@ -772,318 +968,349 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
-            margin-top: 14px;
+            margin-top: 12px;
         }
 
         .just-chip {
-            background: var(--surface2);
-            border: 1px solid var(--border-soft);
+            background: var(--gris-hielo);
+            border: 1px solid var(--gris-borde);
             color: var(--txt-soft);
-            padding: 4px 12px;
-            border-radius: 99px;
+            padding: 4px 11px;
+            border-radius: 3px;
             font-size: 11px;
+            font-family: 'DM Mono', monospace;
         }
 
         .just-chip.highlight {
-            background: rgba(108,142,255,.1);
-            border-color: rgba(108,142,255,.3);
-            color: var(--primary);
+            background: var(--rojo-claro);
+            border-color: var(--rojo-borde);
+            color: var(--rojo-oscuro);
         }
 
-
-        /* ─── BADGE DNI en header del panel ─────────────────────────── */
+        /* ── BADGE DNI ──────────────────────────────────────────── */
         .panel-header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        .dni-badge {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(255,107,157,.08);
-            border: 1px solid rgba(255,107,157,.25);
-            border-radius: 99px;
-            padding: 6px 14px 6px 8px;
-            cursor: pointer; transition: all .2s;
-        }
-        .dni-badge:hover {
-            background: rgba(255,107,157,.16);
-            border-color: rgba(255,107,157,.5);
-        }
-        .dni-avatar {
-            width: 26px; height: 26px;
-            background: linear-gradient(135deg, var(--accent), var(--warn));
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; flex-shrink: 0;
-        }
-        .dni-info  { display: flex; flex-direction: column; line-height: 1.25; }
-        .dni-label { font-size: 9px; color: var(--txt-dim); font-family: "DM Mono", monospace; letter-spacing: .5px; }
-        .dni-value { font-size: 12px; font-weight: 600; color: var(--accent); font-family: "DM Mono", monospace; }
-        .dni-edit  { font-size: 11px; color: var(--txt-dim); margin-left: 2px; }
-        .loading-dni {
-            font-size: 12px; color: var(--txt-dim);
-            font-family: "DM Mono", monospace; margin-top: -8px;
+            gap: 8px;
         }
 
-        /* ─── MODAL DNI ──────────────────────────────────────────────── */
+        .dni-badge {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: var(--radius-sm);
+            padding: 5px 12px 5px 8px;
+            cursor: pointer; transition: all .15s;
+        }
+
+        .dni-badge:hover { background: rgba(255,255,255,.14); }
+
+        .dni-avatar {
+            width: 22px; height: 22px;
+            background: var(--rojo);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; flex-shrink: 0;
+        }
+
+        .dni-info  { display: flex; flex-direction: column; line-height: 1.25; }
+        .dni-label { font-size: 9px; color: rgba(255,255,255,.4); font-family: 'DM Mono', monospace; letter-spacing: .4px; text-transform: uppercase; }
+        .dni-value { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.9); font-family: 'DM Mono', monospace; }
+        .dni-edit  { font-size: 11px; color: rgba(255,255,255,.4); margin-left: 2px; }
+
+        /* ── MODAL DNI ──────────────────────────────────────────── */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
-            background: rgba(8,10,18,.82);
+            background: rgba(0,0,0,.55);
             backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
             z-index: 1000;
             align-items: center; justify-content: center; padding: 20px;
         }
+
         .modal-overlay.visible { display: flex; animation: fadeOverlay .2s ease; }
+
         @keyframes fadeOverlay { from { opacity:0; } to { opacity:1; } }
+
         .modal-card {
             background: var(--surface);
-            border: 1px solid var(--border);
+            border: 1px solid var(--gris-borde);
             border-radius: var(--radius-xl);
-            padding: 40px 40px 34px;
-            max-width: 440px; width: 100%;
-            box-shadow: 0 32px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(255,107,157,.12);
-            animation: modalPop .3s cubic-bezier(.34,1.56,.64,1);
-            position: relative; overflow: hidden;
+            padding: 0;
+            max-width: 420px; width: 100%;
+            box-shadow: var(--shadow-lg);
+            animation: modalPop .28s cubic-bezier(.34,1.56,.64,1);
+            overflow: hidden;
         }
-        .modal-card::before {
-            content: ""; position: absolute; top: -80px; right: -80px;
-            width: 240px; height: 240px;
-            background: radial-gradient(circle, rgba(255,107,157,.11) 0%, transparent 70%);
-            pointer-events: none;
+
+        .modal-top-band {
+            height: 5px;
+            background: var(--rojo);
         }
-        .modal-card::after {
-            content: ""; position: absolute; bottom: -60px; left: -60px;
-            width: 180px; height: 180px;
-            background: radial-gradient(circle, rgba(108,142,255,.07) 0%, transparent 70%);
-            pointer-events: none;
+
+        .modal-body {
+            padding: 36px 36px 30px;
         }
+
         @keyframes modalPop {
-            from { opacity:0; transform: scale(.9) translateY(20px); }
+            from { opacity:0; transform: scale(.92) translateY(18px); }
             to   { opacity:1; transform: scale(1) translateY(0); }
         }
+
         .modal-icon-wrap {
-            width: 70px; height: 70px; margin: 0 auto 24px;
-            background: linear-gradient(135deg, rgba(255,107,157,.18), rgba(255,198,84,.12));
-            border: 1px solid rgba(255,107,157,.28);
+            width: 62px; height: 62px; margin: 0 auto 20px;
+            background: var(--gris-claro);
+            border: 1px solid var(--gris-borde);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 34px; position: relative; z-index: 1;
+            font-size: 28px;
         }
+
         .modal-title {
-            font-size: 20px; font-weight: 700; text-align: center;
-            margin-bottom: 8px; position: relative; z-index: 1;
+            font-size: 19px; font-weight: 700; text-align: center;
+            margin-bottom: 6px; color: var(--carbon);
+            font-family: 'Source Serif 4', serif;
         }
+
         .modal-subtitle {
             font-size: 13px; color: var(--txt-soft); text-align: center;
-            line-height: 1.65; margin-bottom: 26px; position: relative; z-index: 1;
+            line-height: 1.6; margin-bottom: 22px;
         }
+
         .modal-info {
-            background: rgba(108,142,255,.07);
-            border: 1px solid rgba(108,142,255,.2);
+            background: var(--rojo-claro);
+            border: 1px solid var(--rojo-borde);
+            border-left: 3px solid var(--rojo);
             border-radius: var(--radius-sm);
             padding: 10px 14px; font-size: 12px; color: var(--txt-soft);
             line-height: 1.55; margin-bottom: 22px;
             display: flex; align-items: flex-start; gap: 8px;
-            position: relative; z-index: 1;
         }
+
         .modal-info-icon { flex-shrink: 0; margin-top: 1px; }
+
         .dni-input-label {
-            display: block; font-size: 11px; font-weight: 600;
-            color: var(--txt-dim); letter-spacing: .8px;
-            font-family: "DM Mono", monospace; text-transform: uppercase;
-            margin-bottom: 8px; position: relative; z-index: 1;
+            display: block; font-size: 10px; font-weight: 700;
+            color: var(--txt-dim); letter-spacing: .9px;
+            font-family: 'DM Mono', monospace; text-transform: uppercase;
+            margin-bottom: 8px;
         }
-        .dni-input-wrap { position: relative; margin-bottom: 6px; z-index: 1; }
+
+        .dni-input-wrap { position: relative; margin-bottom: 6px; }
+
         .dni-input-field {
-            width: 100%; background: var(--surface2);
-            border: 2px solid var(--border); color: var(--txt);
-            padding: 14px 50px 14px 18px;
+            width: 100%; background: var(--gris-hielo);
+            border: 2px solid var(--gris-borde); color: var(--txt);
+            padding: 14px 46px 14px 18px;
             border-radius: var(--radius-md);
-            font-size: 22px; font-family: "DM Mono", monospace;
-            font-weight: 500; letter-spacing: 5px; text-align: center;
-            outline: none; transition: all .22s;
+            font-size: 24px; font-family: 'DM Mono', monospace;
+            font-weight: 500; letter-spacing: 6px; text-align: center;
+            outline: none; transition: all .18s;
         }
-        .dni-input-field::placeholder { color: var(--txt-dim); letter-spacing: 3px; font-size: 18px; }
+
+        .dni-input-field::placeholder { color: var(--gris-borde); letter-spacing: 4px; font-size: 20px; }
+
         .dni-input-field:focus {
-            border-color: var(--accent);
-            background: rgba(255,107,157,.04);
-            box-shadow: 0 0 0 4px rgba(255,107,157,.11);
+            border-color: var(--carbon);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(28,28,30,.06);
         }
+
         .dni-input-field.dni-error {
-            border-color: var(--error); box-shadow: 0 0 0 4px rgba(255,94,126,.11);
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px rgba(255,59,48,.1);
         }
+
         .dni-input-field.dni-ok {
-            border-color: var(--success); box-shadow: 0 0 0 4px rgba(67,232,168,.11);
+            border-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(48,192,90,.12);
         }
+
         .dni-char-count {
             position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-            font-size: 11px; color: var(--txt-dim);
-            font-family: "DM Mono", monospace; pointer-events: none;
+            font-size: 10px; color: var(--txt-dim);
+            font-family: 'DM Mono', monospace; pointer-events: none;
         }
+
         .dni-error-msg {
             font-size: 12px; color: var(--error);
             min-height: 18px; margin-bottom: 18px;
-            display: flex; align-items: center; gap: 4px;
-            position: relative; z-index: 1;
         }
+
         .btn-modal-primary {
             width: 100%;
-            background: linear-gradient(135deg, #c0547c, var(--accent));
-            color: white; border: none; padding: 15px;
+            background: var(--rojo);
+            color: white; border: none; padding: 14px;
             border-radius: var(--radius-md);
-            font-size: 15px; font-weight: 700; font-family: "DM Sans", sans-serif;
-            cursor: pointer; transition: all .22s;
+            font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .15s;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            position: relative; z-index: 1;
         }
-        .btn-modal-primary:hover:not(:disabled) {
-            transform: translateY(-2px); box-shadow: 0 8px 28px rgba(255,107,157,.38);
-        }
-        .btn-modal-primary:active:not(:disabled) { transform: translateY(0); }
-        .btn-modal-primary:disabled { opacity: .42; cursor: not-allowed; }
+
+        .btn-modal-primary:hover:not(:disabled) { background: var(--rojo-oscuro); }
+        .btn-modal-primary:disabled { opacity: .35; cursor: not-allowed; }
+
         .btn-modal-cancelar {
-            width: 100%; margin-top: 10px;
+            width: 100%; margin-top: 8px;
             background: transparent;
-            color: var(--txt-dim); border: 1.5px solid rgba(255,255,255,.12);
+            color: var(--txt-dim); border: 1px solid var(--gris-borde);
             padding: 11px; border-radius: var(--radius-md);
-            font-size: 13px; font-weight: 500; font-family: "DM Sans", sans-serif;
-            cursor: pointer; transition: all .2s;
+            font-size: 13px; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all .15s;
         }
-        .btn-modal-cancelar:hover {
-            background: rgba(255,255,255,.06);
-            color: var(--txt-main); border-color: rgba(255,255,255,.25);
-        }
+
+        .btn-modal-cancelar:hover { background: var(--gris-hielo); color: var(--txt-soft); }
+
         .modal-footer-note {
             font-size: 11px; color: var(--txt-dim);
             text-align: center; margin-top: 14px; line-height: 1.55;
-            position: relative; z-index: 1;
-        }
-        .modal-footer-note a {
-            color: var(--txt-soft); text-decoration: underline;
-            text-underline-offset: 3px; cursor: pointer;
         }
 
-        /* ─── RESPONSIVE ─────────────────────────────────────────────── */
+        .modal-footer-note a {
+            color: var(--txt-soft); text-decoration: underline; cursor: pointer;
+        }
+
+        /* ── FOOTER ─────────────────────────────────────────────── */
+        .page-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 36px;
+            padding-top: 20px;
+            border-top: 1px solid var(--gris-borde);
+        }
+
+        .page-footer p {
+            font-size: 11px;
+            color: var(--txt-dim);
+            line-height: 1.7;
+        }
+
+        .page-footer span { color: var(--rojo); font-weight: 500; }
+
+        .footer-escudo {
+            font-size: 24px;
+            opacity: .35;
+        }
+
+        /* ── RESPONSIVE ─────────────────────────────────────────── */
         @media (max-width: 900px) {
             .modules-grid { grid-template-columns: repeat(2, 1fr); }
+            .topbar { padding: 0 18px; }
+            .wrapper { padding: 22px 18px 44px; }
         }
 
         @media (max-width: 560px) {
             .modules-grid { grid-template-columns: 1fr; }
-            .header-pill  { display: none; }
+            .hero-badges  { display: none; }
             .msg-bubble   { max-width: 88%; }
             .courses-grid { grid-template-columns: 1fr; }
+            .page-footer  { flex-direction: column; gap: 12px; text-align: center; }
         }
     </style>
-    <!-- Markdown renderer para el chat SIFODS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-    <script>
-        // Configurar marked: links abren en nueva pestaña, sanitizado básico
-        marked.setOptions({
-            breaks: true,       // saltos de línea simples → <br>
-            gfm:    true,       // GitHub Flavored Markdown (tablas, listas, etc.)
-        });
-        // Hacer que todos los links abran en nueva pestaña de forma segura
-        const _renderer = new marked.Renderer();
-        _renderer.link = (href, title, text) =>
-            `<a href="${href}" target="_blank" rel="noopener noreferrer" class="chat-link">${text}</a>`;
-        marked.setOptions({ renderer: _renderer });
-    </script>
 </head>
 <body>
-<div class="container">
 
-    <!-- ══════════════ HEADER ══════════════ -->
-    <div class="header">
-        <div class="header-badge">🔧</div>
-        <div class="header-text">
-            <h1>Agente Tecnológico · SIFODS</h1>
-            <p>Asistente de navegación y recomendaciones personalizadas · DIFODS</p>
+<!-- ── TOPBAR INSTITUCIONAL ────────────────────────────── -->
+<div class="topbar">
+    <div class="topbar-band"></div>
+    <div class="topbar-escudo">🇵🇪</div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-minedu">Ministerio de Educación</div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-difods">Dirección de Formación Docente en Servicio — DIFODS</div>
+    <div class="topbar-right">
+        <span class="topbar-pill">SIFODS</span>
+    </div>
+</div>
+
+<div class="wrapper">
+
+    <!-- ── HERO ─────────────────────────────────────────── -->
+    <div class="hero">
+        <div class="hero-stripe"></div>
+        <div class="hero-body">
+            <div class="hero-logo">🔧</div>
+            <div class="hero-info">
+                <h1>Agente Tecnológico <span>·</span> SIFODS</h1>
+                <p>Asistente de navegación inteligente y recomendaciones personalizadas para docentes · DIFODS</p>
+            </div>
+            <div class="hero-badges">
+                <div class="hero-badge">
+                    <div class="hero-badge-dot"></div>
+                    <span>Sistema activo</span>
+                </div>
+                <span class="hero-version">v2.0</span>
+            </div>
         </div>
-        <div class="header-pill">v2.0</div>
     </div>
 
-    <!-- ══════════════ MÓDULOS ══════════════ -->
+    <!-- ── MÓDULOS ───────────────────────────────────────── -->
+    <div class="section-label">Servicios disponibles</div>
+
     <div class="modules-grid">
 
-        <!-- Módulo 1: Chat SIFODS -->
         <div class="module-card sifods" id="card-sifods" onclick="abrirModulo('sifods')">
-            <div class="bar"></div>
-            <span class="module-icon">🗺️</span>
+            <div class="module-icon-wrap">🗺️</div>
             <div class="module-title">Ayuda con SIFODS</div>
-            <div class="module-desc">Navega la plataforma, accede a recursos y resuelve problemas técnicos.</div>
-            <span class="module-status status-available" id="badge-sifods">DISPONIBLE</span>
+            <div class="module-desc">Navega la plataforma, accede a recursos y resuelve tus dudas técnicas.</div>
+            <span class="module-status status-available" id="badge-sifods">Disponible</span>
         </div>
 
-        <!-- Módulo 2: Recomendación -->
         <div class="module-card recomendacion" id="card-recomendacion" onclick="abrirModulo('recomendacion')">
-            <div class="bar"></div>
-            <span class="module-icon">🎯</span>
+            <div class="module-icon-wrap">🎯</div>
             <div class="module-title">Recomendación de Cursos</div>
             <div class="module-desc">Cursos personalizados según tu historial y perfil docente.</div>
-            <span class="module-status status-available" id="badge-recomendacion">DISPONIBLE</span>
+            <span class="module-status status-available" id="badge-recomendacion">Disponible</span>
         </div>
 
-        <!-- Módulo 3: Próximamente -->
         <div class="module-card tarea3 disabled">
-            <div class="bar"></div>
-            <span class="module-icon">📊</span>
+            <div class="module-icon-wrap">📊</div>
             <div class="module-title">Mi Progreso</div>
             <div class="module-desc">Consulta tu avance, cursos completados y estadísticas.</div>
-            <span class="module-status status-soon">PRÓXIMAMENTE</span>
+            <span class="module-status status-soon">Próximamente</span>
         </div>
 
-        <!-- Módulo 4: Próximamente -->
         <div class="module-card tarea4 disabled">
-            <div class="bar"></div>
-            <span class="module-icon">📄</span>
+            <div class="module-icon-wrap">📄</div>
             <div class="module-title">Constancias y Reportes</div>
             <div class="module-desc">Genera reportes de actividad y descarga tus constancias.</div>
-            <span class="module-status status-soon">PRÓXIMAMENTE</span>
+            <span class="module-status status-soon">Próximamente</span>
         </div>
 
-    </div><!-- /modules-grid -->
+    </div>
 
-    <!-- ══════════════ PANEL ÁREA ══════════════ -->
+    <!-- ── PANEL ÁREA ────────────────────────────────────── -->
     <div class="panel-area" id="panel-area">
 
-        <!-- ──────── PANEL 1: CHAT SIFODS ──────── -->
+        <!-- PANEL SIFODS -->
         <div id="panel-sifods" style="display:none;">
-            <!-- Header -->
             <div class="panel-header">
                 <div class="panel-header-left">
-                    <div class="panel-header-icon icon-sifods">🗺️</div>
+                    <div class="panel-header-icon">🗺️</div>
                     <div>
                         <h2>Ayuda con SIFODS</h2>
                         <p>Asistente de navegación · RAG sobre manuales de la plataforma</p>
                     </div>
                 </div>
-                <button class="btn-close" onclick="cerrarModulo()">Cerrar ✕</button>
+                <button class="btn-close" onclick="cerrarModulo()">✕ Cerrar</button>
             </div>
 
-            <!-- Sugerencias -->
             <div class="suggestions-bar">
-                <span class="suggestions-label">💡 Sugerencias</span>
+                <span class="suggestions-label">Sugerencias</span>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Cómo accedo al Centro de Recursos?')">Centro de Recursos</button>
-                <button class="suggestion-chip" onclick="usarSugerencia('No puedo iniciar sesión en la plataforma Sifods, ¿qué hago?')">Problemas de acceso</button>
+                <button class="suggestion-chip" onclick="usarSugerencia('No puedo iniciar sesión en SIFODS, ¿qué hago?')">Problemas de acceso</button>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Dónde están los videos de YouTube?')">Videos YouTube</button>
                 <button class="suggestion-chip" onclick="usarSugerencia('¿Cómo descargo un recurso del Centro de Recursos?')">Descargar recursos</button>
             </div>
 
-            <!-- Mensajes -->
-            <div class="chatbox" id="chatbox">
-                <!-- se llena dinámicamente -->
-            </div>
+            <div class="chatbox" id="chatbox"></div>
 
-            <!-- Typing -->
             <div class="typing-row" id="typing-row">
                 <div class="typing-dots">
                     <span></span><span></span><span></span>
                 </div>
             </div>
 
-            <!-- Input -->
             <div class="chat-input-area">
                 <input
                     class="chat-input"
@@ -1092,27 +1319,24 @@
                     placeholder="Escribe tu pregunta sobre SIFODS..."
                     onkeydown="if(event.key==='Enter') enviarMensaje()"
                 >
-                <button class="btn-send" id="btn-send" onclick="enviarMensaje()">Enviar →</button>
+                <button class="btn-send" id="btn-send" onclick="enviarMensaje()">
+                    Enviar →
+                </button>
             </div>
-        </div><!-- /panel-sifods -->
+        </div>
 
-
-        <!-- ──────── PANEL 2: RECOMENDACIÓN ──────── -->
+        <!-- PANEL RECOMENDACIÓN -->
         <div id="panel-recomendacion" style="display:none;">
-
-            <!-- Header -->
             <div class="panel-header">
                 <div class="panel-header-left">
-                    <div class="panel-header-icon icon-recomendacion">🎯</div>
+                    <div class="panel-header-icon">🎯</div>
                     <div>
                         <h2>Recomendación de Cursos</h2>
                         <p>Filtro colaborativo híbrido · Resultados personalizados para ti</p>
                     </div>
                 </div>
                 <div class="panel-header-right">
-                    <!-- Badge DNI visible cuando hay sesión activa -->
-                    <div class="dni-badge" id="dni-badge" onclick="abrirModalDni()"
-                         title="Cambiar identificación" style="display:none;">
+                    <div class="dni-badge" id="dni-badge" onclick="abrirModalDni()" title="Cambiar identificación" style="display:none;">
                         <div class="dni-avatar">👤</div>
                         <div class="dni-info">
                             <span class="dni-label">DNI activo</span>
@@ -1120,81 +1344,123 @@
                         </div>
                         <span class="dni-edit">✎</span>
                     </div>
-                    <button class="btn-close" onclick="cerrarModulo()">Cerrar ✕</button>
+                    <button class="btn-close" onclick="cerrarModulo()">✕ Cerrar</button>
                 </div>
             </div>
 
-            <!-- Loading -->
             <div class="rec-loading" id="rec-loading">
                 <div class="loading-spinner"></div>
                 <div class="loading-text">Calculando recomendaciones personalizadas…</div>
                 <div class="loading-dni" id="loading-dni-text"></div>
             </div>
 
-            <!-- Body con cards -->
             <div class="rec-body hidden" id="rec-body">
                 <div class="rec-meta">
                     <div class="rec-meta-title">
                         Mostrando <strong id="rec-count">0</strong> cursos recomendados para ti
                     </div>
-                    <button class="btn-refresh" onclick="cargarRecomendaciones()">
-                        ↻ Actualizar
-                    </button>
+                    <button class="btn-refresh" onclick="cargarRecomendaciones()">↻ Actualizar</button>
                 </div>
-                <div class="courses-grid" id="courses-grid">
-                    <!-- Se llena dinámicamente -->
-                </div>
+                <div class="courses-grid" id="courses-grid"></div>
             </div>
 
-            <!-- Panel de justificación (aparece al hacer clic en una card) -->
             <div class="justificacion-panel" id="just-panel">
                 <div class="just-header">
                     <div class="just-icon">✨</div>
                     <div>
                         <div class="just-course-name" id="just-course-name">—</div>
-                        <div class="just-label">JUSTIFICACIÓN DE LA IA</div>
+                        <div class="just-label">Justificación de la IA</div>
                     </div>
                 </div>
                 <div class="just-text" id="just-text">
                     <div class="just-loading" id="just-loading">
-                        <div class="loading-spinner" style="width:20px;height:20px;border-width:2px;"></div>
+                        <div class="loading-spinner" style="width:18px;height:18px;border-width:2px;"></div>
                         Generando justificación…
                     </div>
                     <span id="just-content" style="display:none;"></span>
                 </div>
                 <div class="just-chips" id="just-chips"></div>
             </div>
-
-        </div><!-- /panel-recomendacion -->
+        </div>
 
     </div><!-- /panel-area -->
 
-</div><!-- /container -->
+    <!-- ── FOOTER ────────────────────────────────────────── -->
+    <div class="page-footer">
+        <p>
+            <span>Agente Tecnológico SIFODS</span> · Dirección de Formación Docente en Servicio<br>
+            Ministerio de Educación del Perú · 2026
+        </p>
+        <div class="footer-escudo">🇵🇪</div>
+    </div>
+
+</div><!-- /wrapper -->
+
+<!-- ── MODAL DNI ──────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal-dni">
+    <div class="modal-card">
+        <div class="modal-top-band"></div>
+        <div class="modal-body">
+            <div class="modal-icon-wrap">🎓</div>
+            <div class="modal-title">Identifícate para continuar</div>
+            <div class="modal-subtitle">
+                Ingresa tu DNI para ver cursos personalizados<br>
+                según tu historial y perfil como docente.
+            </div>
+            <div class="modal-info">
+                <span class="modal-info-icon">💡</span>
+                <span>Tu DNI es el <strong>usuario_documento</strong> con el que estás registrado en SIFODS. Lo usamos para calcular recomendaciones basadas en tu trayectoria.</span>
+            </div>
+            <label class="dni-input-label" for="input-dni">Número de DNI</label>
+            <div class="dni-input-wrap">
+                <input
+                    type="text" id="input-dni"
+                    class="dni-input-field"
+                    placeholder="00000000"
+                    maxlength="8"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    oninput="onDniInput(this)"
+                    onkeydown="if(event.key==='Enter') confirmarDni()"
+                >
+                <span class="dni-char-count" id="dni-char-count">0/8</span>
+            </div>
+            <div class="dni-error-msg" id="dni-error"></div>
+            <button class="btn-modal-primary" id="btn-confirmar-dni" onclick="confirmarDni()" disabled>
+                <span>Ver mis recomendaciones</span>
+                <span>→</span>
+            </button>
+            <button class="btn-modal-cancelar" onclick="cancelarModalDni()">Cancelar</button>
+            <div class="modal-footer-note">
+                Sin historial en SIFODS, verás igualmente los cursos más relevantes para tu región.
+                <span id="link-cancelar" style="display:none;"><br>
+                    <a onclick="cancelarModal()">Cancelar y mantener sesión anterior</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// ESTADO GLOBAL
-// ═══════════════════════════════════════════════════════════════
-// v1: DNI ingresado por el docente en el modal (sin sesión integrada).
-// v2 futura: leer USUARIO_DNI desde token de sesión SIFODS.
+marked.setOptions({ breaks: true, gfm: true });
+const _renderer = new marked.Renderer();
+_renderer.link = (href, title, text) =>
+    `<a href="${href}" target="_blank" rel="noopener noreferrer" class="chat-link">${text}</a>`;
+marked.setOptions({ renderer: _renderer });
+
+// ── ESTADO ──────────────────────────────────────────────────
 let USUARIO_DNI         = null;
-const API_BASE          = "";   // mismo origen
+const API_BASE          = "";
 let moduloActivo        = null;
 let recomendacionesData = [];
 let cursoSeleccionado   = null;
 
-
-// ═══════════════════════════════════════════════════════════════
-// MODAL DE IDENTIFICACIÓN DNI
-// ═══════════════════════════════════════════════════════════════
-
-/** Abre el modal. Si ya hay DNI, prerellena el campo. */
+// ── MODAL DNI ───────────────────────────────────────────────
 function abrirModalDni() {
     const overlay = document.getElementById('modal-dni');
     const input   = document.getElementById('input-dni');
     const errMsg  = document.getElementById('dni-error');
     const linkCan = document.getElementById('link-cancelar');
-
     if (USUARIO_DNI) {
         input.value = USUARIO_DNI;
         actualizarContador(USUARIO_DNI.length);
@@ -1208,158 +1474,113 @@ function abrirModalDni() {
         input.classList.remove('dni-ok', 'dni-error');
         linkCan.style.display = 'none';
     }
-
     errMsg.textContent = '';
     overlay.classList.add('visible');
     setTimeout(() => input.focus(), 140);
 }
 
-/** Cierra el modal sin cambiar el DNI (solo si ya había uno) */
 function cancelarModal() {
-    if (USUARIO_DNI) {
-        document.getElementById('modal-dni').classList.remove('visible');
-    }
+    if (USUARIO_DNI) document.getElementById('modal-dni').classList.remove('visible');
 }
 
-/** Validación en tiempo real: solo dígitos, habilitar botón al llegar a 8 */
 function onDniInput(input) {
-    input.value = input.value.replace(/\D/g, '');   // solo números
+    input.value = input.value.replace(/\D/g, '');
     const len     = input.value.length;
     const btnConf = document.getElementById('btn-confirmar-dni');
-    const errMsg  = document.getElementById('dni-error');
-
     actualizarContador(len);
-    errMsg.textContent = '';
+    document.getElementById('dni-error').textContent = '';
     input.classList.remove('dni-ok', 'dni-error');
-
-    if (len === 8) {
-        input.classList.add('dni-ok');
-        btnConf.disabled = false;
-    } else {
-        btnConf.disabled = true;
-    }
+    if (len === 8) { input.classList.add('dni-ok'); btnConf.disabled = false; }
+    else { btnConf.disabled = true; }
 }
 
 function actualizarContador(len) {
     document.getElementById('dni-char-count').textContent = `${len}/8`;
 }
 
-/** Confirma el DNI, lo guarda y dispara la carga de recomendaciones */
 function confirmarDni() {
     const input  = document.getElementById('input-dni');
     const errMsg = document.getElementById('dni-error');
     const dni    = input.value.trim();
-
     if (!/^\d{8}$/.test(dni)) {
         input.classList.add('dni-error');
         errMsg.textContent = '⚠️ El DNI debe tener exactamente 8 dígitos.';
         input.focus();
         return;
     }
-
     USUARIO_DNI = dni;
     document.getElementById('modal-dni').classList.remove('visible');
     mostrarBadgeDni(dni);
     cargarRecomendaciones();
 }
 
-/** Muestra el badge con el DNI en el header del panel */
 function mostrarBadgeDni(dni) {
     const badge = document.getElementById('dni-badge');
     document.getElementById('dni-badge-value').textContent = dni;
     badge.style.display = 'flex';
 }
 
-// Cerrar con clic fuera de la tarjeta (solo si ya hay DNI)
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-dni').addEventListener('click', function(e) {
         if (e.target === this && USUARIO_DNI) cancelarModal();
     });
 });
-
-// Cerrar con Escape (solo si ya hay DNI)
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && USUARIO_DNI) cancelarModal();
 });
 
-// ═══════════════════════════════════════════════════════════════
-// NAVEGACIÓN DE MÓDULOS
-// ═══════════════════════════════════════════════════════════════
-
+// ── NAVEGACIÓN ──────────────────────────────────────────────
 function abrirModulo(modulo) {
-    // Ocultar todo
-    document.getElementById('panel-sifods').style.display        = 'none';
-    document.getElementById('panel-recomendacion').style.display  = 'none';
-
-    // Desactivar badges
+    document.getElementById('panel-sifods').style.display       = 'none';
+    document.getElementById('panel-recomendacion').style.display = 'none';
     ['sifods','recomendacion'].forEach(m => {
         const card  = document.getElementById(`card-${m}`);
         const badge = document.getElementById(`badge-${m}`);
         card.classList.remove('active');
-        badge.textContent  = 'DISPONIBLE';
-        badge.className    = 'module-status status-available';
+        badge.textContent = 'Disponible';
+        badge.className   = 'module-status status-available';
     });
-
-    // Activar módulo seleccionado
     moduloActivo = modulo;
-    const card  = document.getElementById(`card-${modulo}`);
+    document.getElementById(`card-${modulo}`).classList.add('active');
     const badge = document.getElementById(`badge-${modulo}`);
-    card.classList.add('active');
-    badge.textContent = 'ACTIVO';
+    badge.textContent = 'Activo';
     badge.className   = 'module-status status-active';
-
-    // Mostrar panel
     const panelArea = document.getElementById('panel-area');
     panelArea.classList.add('visible');
     document.getElementById(`panel-${modulo}`).style.display = 'block';
-
-    // Scroll al panel
     panelArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // Lógica específica por módulo
     if (modulo === 'sifods') {
         iniciarChatSifods();
     } else if (modulo === 'recomendacion') {
-        // Si aún no hay DNI → pedir antes de cargar recomendaciones
-        if (!USUARIO_DNI) {
-            abrirModalDni();
-        } else {
-            cargarRecomendaciones();
-        }
+        if (!USUARIO_DNI) abrirModalDni();
+        else cargarRecomendaciones();
     }
 }
 
 function cancelarModalDni() {
-    // Cierra el modal de DNI y vuelve a la vista de módulos (home)
     document.getElementById('modal-dni').classList.remove('visible');
     cerrarModulo();
 }
 
 function cerrarModulo() {
-    document.getElementById('panel-sifods').style.display        = 'none';
-    document.getElementById('panel-recomendacion').style.display  = 'none';
+    document.getElementById('panel-sifods').style.display       = 'none';
+    document.getElementById('panel-recomendacion').style.display = 'none';
     document.getElementById('panel-area').classList.remove('visible');
-
     ['sifods','recomendacion'].forEach(m => {
         document.getElementById(`card-${m}`).classList.remove('active');
         const badge = document.getElementById(`badge-${m}`);
-        badge.textContent = 'DISPONIBLE';
+        badge.textContent = 'Disponible';
         badge.className   = 'module-status status-available';
     });
-
-    moduloActivo      = null;
-    cursoSeleccionado = null;
+    moduloActivo = null; cursoSeleccionado = null;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MÓDULO 1 — CHAT SIFODS
-// ═══════════════════════════════════════════════════════════════
-
+// ── CHAT SIFODS ─────────────────────────────────────────────
 function iniciarChatSifods() {
     const chatbox = document.getElementById('chatbox');
     chatbox.innerHTML = '';
     agregarMensajeBot(
-        '👋 ¡Hola! Soy tu asistente para navegar <strong>SIFODS</strong>.\n' +
+        '👋 ¡Hola! Soy tu asistente para navegar **SIFODS**.\n' +
         'Puedo ayudarte con el Centro de Recursos, acceso a la plataforma, ' +
         'videos de YouTube y mucho más.\n\n¿En qué te puedo ayudar hoy?'
     );
@@ -1369,10 +1590,7 @@ function agregarMensajeUsuario(texto) {
     const chatbox = document.getElementById('chatbox');
     const div = document.createElement('div');
     div.className = 'message msg-user';
-    div.innerHTML = `
-        <div class="msg-bubble">${escapeHtml(texto)}</div>
-        <div class="msg-time">${horaActual()}</div>
-    `;
+    div.innerHTML = `<div class="msg-bubble">${escapeHtml(texto)}</div><div class="msg-time">${horaActual()}</div>`;
     chatbox.appendChild(div);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -1382,10 +1600,7 @@ function agregarMensajeBot(texto) {
     const div = document.createElement('div');
     div.className = 'message msg-bot';
     const rendered = typeof marked !== 'undefined' ? marked.parse(texto) : texto;
-    div.innerHTML = `
-        <div class="msg-bubble msg-markdown">${rendered}</div>
-        <div class="msg-time">${horaActual()}</div>
-    `;
+    div.innerHTML = `<div class="msg-bubble msg-markdown">${rendered}</div><div class="msg-time">${horaActual()}</div>`;
     chatbox.appendChild(div);
     chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -1395,30 +1610,20 @@ function mostrarTyping(show) {
 }
 
 async function enviarMensaje() {
-    const input  = document.getElementById('chat-input');
+    const input   = document.getElementById('chat-input');
     const btnSend = document.getElementById('btn-send');
     const mensaje = input.value.trim();
     if (!mensaje) return;
-
     agregarMensajeUsuario(mensaje);
-    input.value       = '';
-    btnSend.disabled  = true;
-    mostrarTyping(true);
-
+    input.value = ''; btnSend.disabled = true; mostrarTyping(true);
     try {
         const res  = await fetch(`${API_BASE}/api/sifods`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mensaje,
-                usuario:  USUARIO_DNI || 'anonimo',
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensaje, usuario: USUARIO_DNI || 'anonimo' })
         });
-
         const data = await res.json();
         mostrarTyping(false);
         agregarMensajeBot(data.respuesta || '❌ Sin respuesta del servidor.');
-
     } catch (err) {
         mostrarTyping(false);
         agregarMensajeBot('❌ Error de conexión. Por favor intenta de nuevo.');
@@ -1434,35 +1639,22 @@ function usarSugerencia(texto) {
     enviarMensaje();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MÓDULO 2 — RECOMENDACIÓN DE CURSOS
-// ═══════════════════════════════════════════════════════════════
-
+// ── RECOMENDACIÓN ───────────────────────────────────────────
 async function cargarRecomendaciones() {
-    // Si no hay DNI aún, abrir modal primero
     if (!USUARIO_DNI) { abrirModalDni(); return; }
-
-    // Reset UI
     document.getElementById('rec-loading').classList.remove('hidden');
     document.getElementById('rec-body').classList.add('hidden');
     document.getElementById('just-panel').classList.remove('visible');
     document.getElementById('loading-dni-text').textContent = `DNI: ${USUARIO_DNI}`;
     cursoSeleccionado = null;
-
     try {
         const res  = await fetch(`${API_BASE}/api/recomendar`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                usuario: USUARIO_DNI
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario: USUARIO_DNI })
         });
-
         const data = await res.json();
         recomendacionesData = data.recomendaciones || [];
-
         renderizarCursos(recomendacionesData);
-
     } catch (err) {
         console.error('Error cargando recomendaciones:', err);
         document.getElementById('rec-loading').classList.add('hidden');
@@ -1475,39 +1667,29 @@ async function cargarRecomendaciones() {
 function renderizarCursos(cursos) {
     document.getElementById('rec-loading').classList.add('hidden');
     document.getElementById('rec-count').textContent = cursos.length;
-
     const grid = document.getElementById('courses-grid');
     grid.innerHTML = '';
-
     if (cursos.length === 0) {
-        grid.innerHTML = `
-            <div style="grid-column:1/-1;text-align:center;padding:40px 0;">
-                <div style="font-size:32px;margin-bottom:12px;">📭</div>
-                <div style="color:var(--txt-soft);font-size:14px;">
-                    No hay recomendaciones disponibles en este momento.
-                </div>
-            </div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 0;">
+            <div style="font-size:32px;margin-bottom:12px;">📭</div>
+            <div style="color:var(--txt-soft);font-size:14px;">No hay recomendaciones disponibles en este momento.</div></div>`;
         document.getElementById('rec-body').classList.remove('hidden');
         return;
     }
-
     cursos.forEach((curso, idx) => {
-        const scorePorc   = Math.round((curso.score_final || 0) * 100);
-        const tasa        = Math.round((curso.TASA_APROBACION || 0) * 100);
-        const horas       = curso.HORAS_PROGRAMA || 0;
-        const nombre      = curso.CURSO || 'Curso';
-        const año         = curso.AÑO  || '';
-        const metodos     = curso.metodos_usados || [];
-
+        const scorePorc = Math.round((curso.score_final || 0) * 100);
+        const tasa      = Math.round((curso.TASA_APROBACION || 0) * 100);
+        const horas     = curso.HORAS_PROGRAMA || 0;
+        const nombre    = curso.CURSO || 'Curso';
+        const año       = curso.AÑO  || '';
         const card = document.createElement('div');
-        card.className   = 'course-card';
-        card.id          = `course-card-${idx}`;
-        card.onclick     = () => seleccionarCurso(idx);
-
+        card.className = 'course-card';
+        card.id        = `course-card-${idx}`;
+        card.onclick   = () => seleccionarCurso(idx);
         card.innerHTML = `
             <div class="course-card-accent"></div>
             <div class="course-card-body">
-                <div class="course-rank">#${idx + 1} RECOMENDADO</div>
+                <div class="course-rank">#${idx + 1} Recomendado</div>
                 <div class="course-name">${escapeHtml(nombre)}</div>
                 <div class="course-meta">
                     ${año ? `<span class="course-tag">📅 ${año}</span>` : ''}
@@ -1515,55 +1697,33 @@ function renderizarCursos(cursos) {
                     <span class="course-tag">✅ ${tasa}% aprob.</span>
                 </div>
                 <div class="course-stats">
-                    <div class="stat">
-                        <span class="stat-val">${scorePorc}%</span>
-                        <span class="stat-lbl">Relevancia</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-val">${tasa}%</span>
-                        <span class="stat-lbl">Aprobación</span>
-                    </div>
+                    <div class="stat"><span class="stat-val">${scorePorc}%</span><span class="stat-lbl">Relevancia</span></div>
+                    <div class="stat"><span class="stat-val">${tasa}%</span><span class="stat-lbl">Aprobación</span></div>
                 </div>
             </div>
             <div class="course-card-footer">
-                <div class="score-bar-wrap">
-                    <div class="score-bar" style="width:${scorePorc}%"></div>
-                </div>
+                <div class="score-bar-wrap"><div class="score-bar" style="width:${scorePorc}%"></div></div>
                 <span class="score-val">${(curso.score_final || 0).toFixed(2)}</span>
-                <button class="btn-justificacion" onclick="event.stopPropagation(); seleccionarCurso(${idx})">
-                    Ver por qué →
-                </button>
-            </div>
-        `;
-
+                <button class="btn-justificacion" onclick="event.stopPropagation(); seleccionarCurso(${idx})">Ver por qué →</button>
+            </div>`;
         grid.appendChild(card);
     });
-
     document.getElementById('rec-body').classList.remove('hidden');
 }
 
 function seleccionarCurso(idx) {
-    // Desmarcar anterior
     if (cursoSeleccionado !== null) {
         const prevCard = document.getElementById(`course-card-${cursoSeleccionado}`);
         if (prevCard) prevCard.classList.remove('selected');
     }
-
-    // Si mismo curso, cerrar panel
     if (cursoSeleccionado === idx) {
         cursoSeleccionado = null;
         document.getElementById('just-panel').classList.remove('visible');
         return;
     }
-
-    // Marcar nuevo
     cursoSeleccionado = idx;
-    const card = document.getElementById(`course-card-${idx}`);
-    card.classList.add('selected');
-
-    // Mostrar panel de justificación
-    const curso = recomendacionesData[idx];
-    mostrarJustificacion(curso);
+    document.getElementById(`course-card-${idx}`).classList.add('selected');
+    mostrarJustificacion(recomendacionesData[idx]);
 }
 
 function mostrarJustificacion(curso) {
@@ -1572,18 +1732,12 @@ function mostrarJustificacion(curso) {
     const loading = document.getElementById('just-loading');
     const content = document.getElementById('just-content');
     const chips   = document.getElementById('just-chips');
-
-    // Mostrar panel con loading
-    nombre.textContent  = curso.CURSO || 'Curso';
+    nombre.textContent    = curso.CURSO || 'Curso';
     loading.style.display = 'flex';
     content.style.display = 'none';
     chips.innerHTML       = '';
     panel.classList.add('visible');
-
-    // Scroll suave al panel
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // Si ya viene la justificación del backend, mostrar directo
     if (curso.justificacion) {
         loading.style.display = 'none';
         content.style.display = 'inline';
@@ -1591,8 +1745,6 @@ function mostrarJustificacion(curso) {
         renderizarChips(curso);
         return;
     }
-
-    // Fallback: la justificación siempre viene del backend, pero por si acaso
     loading.style.display = 'none';
     content.style.display = 'inline';
     content.textContent   = 'Curso relevante para tu perfil y región educativa.';
@@ -1602,9 +1754,7 @@ function mostrarJustificacion(curso) {
 function renderizarChips(curso) {
     const chips   = document.getElementById('just-chips');
     chips.innerHTML = '';
-
-    const metodos = curso.metodos_usados || [];
-
+    const metodos  = curso.metodos_usados || [];
     const etiquetas = {
         'colaborativo':         { label: '👥 Docentes similares', cls: 'highlight' },
         'popularidad':          { label: '📈 Curso popular',       cls: 'highlight' },
@@ -1612,7 +1762,6 @@ function renderizarChips(curso) {
         'novedad':              { label: '✨ Curso reciente',       cls: '' },
         'popularidad_fallback': { label: '⭐ Top valorado',         cls: '' },
     };
-
     metodos.forEach(m => {
         if (etiquetas[m]) {
             const chip = document.createElement('span');
@@ -1621,15 +1770,12 @@ function renderizarChips(curso) {
             chips.appendChild(chip);
         }
     });
-
-    // Tasa de aprobación como chip
     if (curso.TASA_APROBACION) {
         const chip = document.createElement('span');
         chip.className   = 'just-chip';
         chip.textContent = `✅ ${Math.round(curso.TASA_APROBACION * 100)}% de aprobación`;
         chips.appendChild(chip);
     }
-
     if (curso.HORAS_PROGRAMA) {
         const chip = document.createElement('span');
         chip.className   = 'just-chip';
@@ -1638,10 +1784,7 @@ function renderizarChips(curso) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// UTILIDADES
-// ═══════════════════════════════════════════════════════════════
-
+// ── UTILIDADES ──────────────────────────────────────────────
 function escapeHtml(str) {
     const d = document.createElement('div');
     d.appendChild(document.createTextNode(str));
@@ -1652,54 +1795,5 @@ function horaActual() {
     return new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 }
 </script>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     MODAL IDENTIFICACIÓN DNI
-══════════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-dni">
-    <div class="modal-card">
-        <div class="modal-icon-wrap">🎓</div>
-        <div class="modal-title">Identifícate para continuar</div>
-        <div class="modal-subtitle">
-            Ingresa tu DNI para ver cursos personalizados<br>
-            según tu historial y perfil como docente.
-        </div>
-        <div class="modal-info">
-            <span class="modal-info-icon">💡</span>
-            <span>Tu DNI es el <strong>usuario_documento</strong> con el que estás registrado en SIFODS. Lo usamos para calcular recomendaciones basadas en tu trayectoria.</span>
-        </div>
-        <label class="dni-input-label" for="input-dni">Número de DNI</label>
-        <div class="dni-input-wrap">
-            <input
-                type="text" id="input-dni"
-                class="dni-input-field"
-                placeholder="00000000"
-                maxlength="8"
-                inputmode="numeric"
-                autocomplete="off"
-                oninput="onDniInput(this)"
-                onkeydown="if(event.key==='Enter') confirmarDni()"
-            >
-            <span class="dni-char-count" id="dni-char-count">0/8</span>
-        </div>
-        <div class="dni-error-msg" id="dni-error"></div>
-        <button class="btn-modal-primary" id="btn-confirmar-dni"
-                onclick="confirmarDni()" disabled>
-            <span>Ver mis recomendaciones</span>
-            <span>→</span>
-        </button>
-        <button class="btn-modal-cancelar" onclick="cancelarModalDni()">
-            ✕ Cancelar
-        </button>
-        <div class="modal-footer-note">
-            Sin historial en SIFODS, verás igualmente los cursos más relevantes para tu región.
-            <span id="link-cancelar" style="display:none;"><br>
-                <a onclick="cancelarModal()">Cancelar y mantener sesión anterior</a>
-            </span>
-        </div>
-    </div>
-</div>
-
 </body>
 </html>
